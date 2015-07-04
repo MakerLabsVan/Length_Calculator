@@ -3,7 +3,7 @@ var bezier = require('bezier-js');          //from https://github.com/Pomax/bezi
 var fs = require('fs');                     
 var parser = require('svg-path-parser');    //from https://github.com/hughsk/svg-path-parser
 
-//initiate Stream to read from file
+//initiate Stream to read from test file
 var readableStream = fs.createReadStream('test.svg');
 readableStream.setEncoding('utf8');
 
