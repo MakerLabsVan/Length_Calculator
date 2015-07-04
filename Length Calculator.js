@@ -1,11 +1,13 @@
-var bezier = require('bezier-js');
-var fs = require('fs');
-var data = '';
-var parser = require('svg-path-parser');
+//import required libraries
+var bezier = require('bezier-js');          //from https://github.com/Pomax/bezierjs
+var fs = require('fs');                     
+var parser = require('svg-path-parser');    //from https://github.com/hughsk/svg-path-parser
 
-var readableStream = fs.createReadStream('drawing.svg');
+//initiate Stream to read from file
+var readableStream = fs.createReadStream('test.svg');
 readableStream.setEncoding('utf8');
 
+//Reads svg file, identifies path, and parses path
 readableStream.on('data', function(chunk) {
     var start = chunk.indexOf("id=\"path") - 1;
     while(chunk.charAt(start) != '=' ){
@@ -13,15 +15,14 @@ readableStream.on('data', function(chunk) {
     }
     start += 2;
     var end = chunk.indexOf("\"", start);
-    var temp = chunk.substring(start,end);
-    console.log(parser(temp));
+    var pathString = chunk.substring(start,end);
+    console.log(parser(pathString)); //implement method to take data from arrays and use functions to calculate length
 });
  
 readableStream.on('end', function() {
-     
 });
 
-
+//Calculates length of line given array of x,y coordinates
 function getLineLength(x_values, y_values){
     var length = 0;
     for(i = 1; i < x_values.length; i++){
@@ -30,6 +31,7 @@ function getLineLength(x_values, y_values){
     return length;
 }
 
+//Calculates length of cubic bezier curve given array of x,y coordinates
 function getArcLength(x_current, y_current, x_values, y_values){
     var curve = new bezier(x_current,y_current , x_values[0],y_values[0] , x_values[1],y_values[1] , x_values[2],y_values[2])
     return curve.length();
