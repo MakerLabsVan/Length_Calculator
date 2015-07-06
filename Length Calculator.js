@@ -4,9 +4,8 @@ var fs = require('fs');
 var parser = require('svg-path-parser');    //from https://github.com/hughsk/svg-path-parser
 
 //initiate Stream to read from test file. Assuming test file is located in project folder
-var readableStream = fs.createReadStream('test.svg');
+var readableStream = fs.createReadStream('test2.svg', { highWaterMark: 100000 });
 readableStream.setEncoding('utf8');
-
 var length = 0.0;
 
 //Reads svg file, identifies path, and parses path
@@ -14,7 +13,7 @@ readableStream.on('data', function(chunk) {
     var totalLines = (chunk.match(/<path/g) || "").length;
     var indexOfLastLine = 0;
     while(totalLines != 0){
-        var start = chunk.indexOf("\n     d=\"", indexOfLastLine) + 9;
+        var start = chunk.indexOf(" d=\"", indexOfLastLine) + 4;
         var end = chunk.indexOf("\"", start);
         var pathString = chunk.substring(start,end);
         var arrayOfValues = parser(pathString);
@@ -81,10 +80,10 @@ readableStream.on('data', function(chunk) {
             else if(temp.command === "curveto"){
                 if(temp.relative){
                     length += getArcLength(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]);
-                    currentX += temp.x;
-                    currentY += temp.y;
                     smoothX = currentX + temp.x2;
                     smoothY = currentY + temp.y2;
+                    currentX += temp.x;
+                    currentY += temp.y;
                 }
                 else{
                     length += getArcLength(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]);
@@ -102,7 +101,7 @@ readableStream.on('data', function(chunk) {
                     currentY += temp.y;
                 }
                 else{
-                    length += getArcLength(currentX, currentY, [smoothX + ((currentX-smoothX) * 2), temp.x2, temp.x], [smoothY + ((currentY-smoothY) * 2), temp.y2, temp.y]);
+                    length += getArcLength(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]);
                     currentX = temp.x;
                     currentY = temp.y;
 
@@ -111,10 +110,10 @@ readableStream.on('data', function(chunk) {
             else if(temp.command === "quadratic curveto"){
                 if(temp.relative){
                     length += getArcLength(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]);
-                    currentX += temp.x;
-                    currentY += temp.y;
                     smoothX = currentX + temp.x1;
                     smoothY = currentY + temp.y1;
+                    currentX += temp.x;
+                    currentY += temp.y;
                 }
                 else{
                     length += getArcLength(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]);
@@ -136,6 +135,9 @@ readableStream.on('data', function(chunk) {
                     currentX = temp.x;
                     currentY = temp.y;
                 }
+            }
+            else if(temp.command === "elliptical arc"){
+                console.log("Need to implement ellipital arc");
             }
             
         };
