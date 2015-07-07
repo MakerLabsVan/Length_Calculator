@@ -3,14 +3,16 @@ var bezier = require('bezier-js');          //from https://github.com/Pomax/bezi
 var fs = require('fs');                     
 var parser = require('svg-path-parser');    //from https://github.com/hughsk/svg-path-parser
 var SVGCurveLib = require('/Users/Jeremy/node_modules/svg-curve-lib/src/js//svg-curve-lib.js');  //from https://github.com/MadLittleMods/svg-curve-lib
+//var contents = require('extract-svg-path')(__dirname + '<filename>.svg');
 
 //initiate Stream to read from test file. Assuming test file is located in project folder
-var readableStream = fs.createReadStream('test.svg', { highWaterMark: 100000 });
+var readableStream = fs.createReadStream('test10.svg', { highWaterMark: 100000000 });
 readableStream.setEncoding('utf8');
 var length = 0.0;
 
 //Reads svg file, identifies path, and parses path
 readableStream.on('data', function(chunk) {
+    chunk = chunk.substring(chunk.indexOf("<g")); //to avoid calculating pathlength of Clip Path as well.
     var totalLines = (chunk.match(/<path/g) || "").length;
     var indexOfLastLine = 0;
     while(totalLines != 0){
@@ -147,7 +149,7 @@ readableStream.on('data', function(chunk) {
                     break;
 
                 case "elliptical arc":
-                    var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(1000, function(t) {
+                    var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
                         return SVGCurveLib.pointOnEllipticalArc({x: currentX , y: currentY}, temp.rx, temp.ry, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: temp.x, y: temp.y}, t);
                     });
                     length += ellipticalArcArcLengthResult.arcLength;
@@ -165,7 +167,7 @@ readableStream.on('data', function(chunk) {
 });
  
 readableStream.on('end', function() {
-    console.log(length);
+    console.log("Total length is " + length/90 + " inches");
 });
 
 //Calculates length of line given array of x,y coordinates
