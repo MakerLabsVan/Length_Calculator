@@ -3,33 +3,39 @@ var bezier = require('bezier-js');  //from https://github.com/Pomax/bezierjs
 var fs = require('fs');                     
 var svgparser = require('svg-path-parser');    //from https://github.com/hughsk/svg-path-parser
 var SVGCurveLib = require('/Users/Jeremy/node_modules/svg-curve-lib/src/js//svg-curve-lib.js');  //from https://github.com/MadLittleMods/svg-curve-lib
-var xpath = require('xpath')
-var dom = require('xmldom').DOMParser
-var totalLength = 0.0;
+var xpath = require('xpath');
+var dom = require('xmldom').DOMParser;
 
-fs.readFile(__dirname + '/test.svg', "utf8", function(err, data) {
+module.exports.getFilePathLength = getFilePathLength; //make getFilePathLength available for testing
 
-    var start = data.indexOf("xmlns");  //get rid of those flipping namespaces
-    var end = start + 1;
-    while(data.indexOf("xmlns", end) !== -1){
-        end++;
+function getFilePathLength(string){
+    var totalLength = 0;
+    var data = fs.readFileSync(__dirname + string, "utf8");
+
+    while(data.indexOf("xmlns") !== -1){
+        var start = data.indexOf("xmlns");
+        var end = data.indexOf("\n", start);
+        data = data.substring(0, start) + data.substring(end+2);
     }
-    end = data.indexOf("\n", end);
-    data = data.substring(0,start) + data.substring(end);
 
     var doc = new dom().parseFromString(data);  //parse String into data structure
     var array = xpath.select("//path", doc);    //find all path nodes
+
     for(var i = 0; i < array.length; i++){
         var path = xpath.select("./@style", array[i]);
         for(var j = 0; j < path.length; j++){
-            if(path[j].nodeValue.indexOf("#000000") != -1){ //specify colour here
+            if(path[j].nodeValue.indexOf("#ff0000") != -1){ //specify colour here
+                totalLength += getLength(xpath.select("./@d", array[i])[j].nodeValue);
+            }
+            else if(path[j].nodeValue.indexOf("#000000") != -1){ //specify colour here
                 totalLength += getLength(xpath.select("./@d", array[i])[j].nodeValue);
             }
         }
-    }
-    console.log(totalLength);
-});
+    } 
+    return totalLength;
+}
 
+//Calculates length from path data using helper methods
 function getLength(string){
     var arrayOfValues = svgparser(string);
     var currentX = 0.0;
@@ -162,21 +168,30 @@ function getLength(string){
                 break;
 
             case "elliptical arc":
-                var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
-                    return SVGCurveLib.pointOnEllipticalArc({x: currentX , y: currentY}, temp.rx, temp.ry, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: temp.x, y: temp.y}, t);
-                });
-                length += ellipticalArcArcLengthResult.arcLength;
+                if(temp.relative){
+                    var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
+                        return SVGCurveLib.pointOnEllipticalArc({x: currentX , y: currentY}, temp.rx, temp.ry, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: currentX + temp.x, y: currentY + temp.y}, t);
+                    });
+                    length += ellipticalArcArcLengthResult.arcLength;
+                    currentX += temp.x;
+                    currentY += temp.y;
+                }
+                else{
+                    var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
+                        return SVGCurveLib.pointOnEllipticalArc({x: currentX , y: currentY}, temp.rx, temp.ry, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: temp.x, y: temp.y}, t);
+                    });
+                    length += ellipticalArcArcLengthResult.arcLength;
+                    currentX = temp.x;
+                    currentY = temp.y;
+                }
                 break;
 
             default:
                 console.log("Error. Unknown path command.");
         }
-        
     }
-
     return length / 90;
 }
-
 
 //Calculates length of line given array of x,y coordinates
 function getLineLength(x_values, y_values){
