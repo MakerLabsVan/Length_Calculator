@@ -3,36 +3,67 @@ var should = require('should');
 
 describe('Get the total length of all lines in svg', function() {
 	it('line', function(){
-		length_calculator.getFilePathLength("/test_files/line.svg").toFixed(2).should.be.exactly('7.30');
+		var map = length_calculator.getFilePathLength("/test_files/line.svg");
+		map['#000000'].toFixed(2).should.be.exactly('7.30');
 	})
 	it('bezier curves', function(){
-		length_calculator.getFilePathLength("/test_files/bezier_curve.svg").toFixed(2).should.be.exactly('21.29');
+		var map = length_calculator.getFilePathLength("/test_files/bezier_curve.svg");
+		map['#000000'].toFixed(2).should.be.exactly('21.29');
 	})
 	it('elliptical arcs', function(){
-		length_calculator.getFilePathLength("/test_files/elliptical_arc.svg").toFixed(2).should.be.exactly('10.32');
+		var map = length_calculator.getFilePathLength("/test_files/elliptical_arc.svg");
+		map['#000000'].toFixed(2).should.be.exactly('10.32');
 	})
 	it('design 1', function(){
-		length_calculator.getFilePathLength("/test_files/design1.svg").toFixed(2).should.be.exactly('46.15');
+		var map = length_calculator.getFilePathLength("/test_files/design1.svg");
+		map['#000000'].toFixed(2).should.be.exactly('46.15');
 	})
 	it('design 2', function(){
-		length_calculator.getFilePathLength("/test_files/design2.svg").toFixed(2).should.be.exactly('571.72');
+		var map = length_calculator.getFilePathLength("/test_files/design2.svg");
+		map['#000000'].toFixed(2).should.be.exactly('571.72');
 	})
 	it('design 3', function(){
-		length_calculator.getFilePathLength("/test_files/design3.svg").toFixed(2).should.be.exactly('337.66');
+		var map = length_calculator.getFilePathLength("/test_files/design3.svg");
+		map['#ff0000'].toFixed(2).should.be.exactly('337.66');
 	})
 	it('design 4', function(){
-		length_calculator.getFilePathLength("/test_files/design4.svg").toFixed(2).should.be.exactly('106.57');
+		var map = length_calculator.getFilePathLength("/test_files/design4.svg");
+		map['#000000'].toFixed(2).should.be.exactly('106.57');
 	})
 	it('design 5', function(){
-		length_calculator.getFilePathLength("/test_files/design5.svg").toFixed(2).should.be.exactly('131.18');
+		var map = length_calculator.getFilePathLength("/test_files/design5.svg");
+		map['#000000'].toFixed(2).should.be.exactly('131.18');
 	})
 	it('design 6', function(){
-		length_calculator.getFilePathLength("/test_files/design6.svg").toFixed(2).should.be.exactly('191.22');
+		var map = length_calculator.getFilePathLength("/test_files/design6.svg");
+		map['#000000'].toFixed(2).should.be.exactly('191.22');
+	})
+	it('design 7 with scaling', function(){
+		var map = length_calculator.getFilePathLength("/test_files/design7.svg");
+		map['#ff0000'].toFixed(2).should.be.exactly('239.03');
+	})
+	it('design 8 with scaling', function(){
+		var map = length_calculator.getFilePathLength("/test_files/design8.svg");
+		map['#ff0000'].toFixed(2).should.be.exactly('163.98');
 	})
 	it('group 1', function(){
-		length_calculator.getFilePathLength("/test_files/group1.svg").toFixed(2).should.be.exactly('19.81');
+		var map = length_calculator.getFilePathLength("/test_files/group1.svg");
+		map['#000000'].toFixed(2).should.be.exactly('22.45');
 	})
 	it('pdf converted to svg', function(){
-		length_calculator.getFilePathLength("/test_files/converted_pdf.svg").toFixed(2).should.be.exactly('155.29');
+		var map = length_calculator.getFilePathLength("/test_files/converted_pdf.svg");
+		map['#000000'].toFixed(2).should.be.exactly('155.29');
+	})
+	it('colours', function(){
+		var map = length_calculator.getFilePathLength("/test_files/colours.svg");
+		map['#000000'].toFixed(2).should.be.exactly('21.29');
+		map['#ff0000'].toFixed(2).should.be.exactly('2.19');
+		map['#00ff00'].toFixed(2).should.be.exactly('5.91');
+	})
+	it('opacity', function(){
+		var map = length_calculator.getFilePathLength("/test_files/opaque.svg");
+		map['#ff0000'].toFixed(2).should.be.exactly('2.19');
+		should.not.exist(map['#000000']);
+		should.not.exist(map['#00ff00']);
 	})
 })
