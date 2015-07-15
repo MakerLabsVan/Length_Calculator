@@ -8,10 +8,12 @@ var dom = require('xmldom').DOMParser;
 
 module.exports.getFilePathLength = getFilePathLength; //make getFilePathLength available for testing
 
-console.log(getFilePathLength("/test_files/number1.svg"));
-
 function getFilePathLength(string){
-    var map = {smallX:Number.MAX_VALUE, smallY:Number.MAX_VALUE, largeX:Number.MIN_VALUE, largeY:Number.MIN_VALUE};
+    var smallX = Number.MAX_VALUE;
+    var smallY = Number.MAX_VALUE;
+    var largeX = Number.MIN_VALUE;
+    var largeY = Number.MIN_VALUE;
+    var map = {};
     var data = fs.readFileSync(__dirname + string, "utf8");
 
     while(data.indexOf("xmlns") !== -1){
@@ -21,12 +23,32 @@ function getFilePathLength(string){
     }
 
     var doc = new dom().parseFromString(data);  //parse String into data structure
-    var array = xpath.select("//path", doc);    //find all path nodes
-
+    var array = xpath.select("//path[@style]", doc);    //find all path nodes with style attribute
     for(var i = 0; i < array.length; i++){
         var path = xpath.select("./@style", array[i]);
+        var transform = xpath.select("ancestor::*/@transform", array[i]);
+        var transformX = 1;
+        var transformY = 1;
+        for (var k = 0; k < transform.length; k++){     //take into account transformations
+            if(transform[k] !== undefined){
+                var temp = transform[k].nodeValue;
+                if (temp.indexOf("matrix") !== -1){
+                    transformX *= temp.substring(temp.indexOf("(")+1, temp.indexOf(","));
+                    var startingIndex = temp.indexOf(",", temp.indexOf(",", temp.indexOf(",") + 1) + 1) + 1;
+                    transformY *= temp.substring(startingIndex, temp.indexOf(",", startingIndex));
+                }
+                else if(temp.indexOf("scale") !== -1 && temp.indexOf(",") !== -1){
+                    transformX *= temp.substring(temp.indexOf("(")+1, temp.indexOf(","));
+                    transformY *= temp.substring(temp.indexOf(",")+1, temp.indexOf(")"));
+                }
+                else if(temp.indexOf("scale") !== -1){
+                    transformX *= temp.substring(temp.indexOf("(")+1, temp.indexOf(")"));
+                    transformY *= 1;
+                }
+            }
+        }
         for(var j = 0; j < path.length; j++){
-            var colour = path[j].nodeValue.substring(path[j].nodeValue.indexOf("stroke:")+7,path[j].nodeValue.indexOf("stroke:")+14);
+            var colour = path[j].nodeValue.substring(path[j].nodeValue.indexOf("stroke:")+7,path[j].nodeValue.indexOf("stroke:")+14);   //dealing with opacity, does not calculte length of invisible objects
             if(path[j].nodeValue.indexOf(";",path[j].nodeValue.indexOf(";opacity:")+9) !== -1){
                 var opacity = path[j].nodeValue.substring(path[j].nodeValue.indexOf(";opacity:")+9,path[j].nodeValue.indexOf(";",path[j].nodeValue.indexOf(";opacity:")));
             }
@@ -35,47 +57,49 @@ function getFilePathLength(string){
             }
             if(opacity !== "0"){
                 if(map[colour] != undefined){
-                    info = getLength(xpath.select("./@d", array[i])[j].nodeValue);
+                    info = getLength(xpath.select("./@d", array[i])[j].nodeValue, transformX, transformY);
                     map[colour] += info.length;
-                    if(map.smallX > info.smallX){
-                        map.smallX = info.smallX;
+                    if(smallX > info.smallX){
+                        smallX = info.smallX;
                     }
-                    if(map.smallY > info.smallY){
-                        map.smallY = info.smallY;
+                    if(smallY > info.smallY){
+                        smallY = info.smallY;
                     }
-                    if(map.largeX < info.largeX){
-                        map.largeX = info.largeX;
+                    if(largeX < info.largeX){
+                        largeX = info.largeX;
                     }
-                    if(map.largeY < info.largeY){
-                        map.largeY = info.largeY;
+                    if(largeY < info.largeY){
+                        largeY = info.largeY;
                     }
                 }
                 else{
-                    info = getLength(xpath.select("./@d", array[i])[j].nodeValue);
+                    info = getLength(xpath.select("./@d", array[i])[j].nodeValue, transformX, transformY);
                     map[colour] = info.length;
-                    if(map.smallX > info.smallX){
-                        map.smallX = info.smallX;
+                    if(smallX > info.smallX){
+                        smallX = info.smallX;
                     }
-                    if(map.smallY > info.smallY){
-                        map.smallY = info.smallY;
+                    if(smallY > info.smallY){
+                        smallY = info.smallY;
                     }
-                    if(map.largeX < info.largeX){
-                        map.largeX = info.largeX;
+                    if(largeX < info.largeX){
+                        largeX = info.largeX;
                     }
-                    if(map.largeY < info.largeY){
-                        map.largeY = info.largeY;
+                    if(largeY < info.largeY){
+                        largeY = info.largeY;
                     }
                 }
             } 
         }
     } 
-    map.xWidth = map.largeX - map.smallX;
-    map.yLength = map.largeY - map.smallY;
+    map.xWidth = (largeX - smallX) / 90;
+    map.yLength = (largeY - smallY) / 90;
     return map;
 }
 
 //Calculates length from path data using helper methods
-function getLength(string){
+function getLength(string, transform_X, transform_Y){
+    var transformX = transform_X;
+    var transformY = transform_Y;
     var arrayOfValues = svgparser(string);
     var currentX = 0.0;
     var currentY = 0.0;
@@ -94,10 +118,10 @@ function getLength(string){
         switch(temp.command){
             case "moveto":
                 if(temp.relative){
-                    currentX += temp.x;
-                    currentY += temp.y;
-                    closeX += temp.x;
-                    closeY += temp.y;
+                    currentX += temp.x * transformX;
+                    currentY += temp.y * transformY;
+                    closeX += temp.x * transformX;
+                    closeY += temp.y * transformY;
                     if(smallX > currentX){
                         smallX = currentX;
                     }
@@ -112,10 +136,10 @@ function getLength(string){
                     }
                 }
                 else{
-                    currentX = temp.x;
-                    currentY = temp.y;
-                    closeX = temp.x;
-                    closeY = temp.y;
+                    currentX = temp.x * transformX;
+                    currentY = temp.y * transformY;
+                    closeX = temp.x * transformX;
+                    closeY = temp.y * transformY;
                     if(smallX > currentX){
                         smallX = currentX;
                     }
@@ -133,9 +157,9 @@ function getLength(string){
 
             case "lineto":
                 if(temp.relative){
-                    length += getLineLength([currentX, currentX + temp.x], [currentY, currentY + temp.y])
-                    currentX += temp.x;
-                    currentY += temp.y;
+                    length += getLineLength([currentX, currentX + temp.x * transformX], [currentY, currentY + temp.y * transformY])
+                    currentX += temp.x * transformX;
+                    currentY += temp.y * transformY;
                     if(smallX > currentX){
                         smallX = currentX;
                     }
@@ -150,9 +174,9 @@ function getLength(string){
                     }
                 }
                 else{
-                    length += getLineLength([currentX, temp.x], [currentY, temp.y]);
-                    currentX = temp.x;
-                    currentY = temp.y;
+                    length += getLineLength([currentX, temp.x * transformX], [currentY, temp.y * transformY]);
+                    currentX = temp.x * transformX;
+                    currentY = temp.y * transformY;
                     if(smallX > currentX){
                         smallX = currentX;
                     }
@@ -170,8 +194,8 @@ function getLength(string){
 
             case "horizontal lineto":
                 if(temp.relative){
-                    length += getLineLength([currentX, currentX + temp.x], [currentY, currentY])
-                    currentX += temp.x;
+                    length += getLineLength([currentX, currentX + temp.x * transformX], [currentY, currentY])
+                    currentX += temp.x * transformX;
                     if(smallX > currentX){
                         smallX = currentX;
                     }
@@ -186,8 +210,8 @@ function getLength(string){
                     }
                 }
                 else{
-                    length += getLineLength([currentX, temp.x], [currentY, currentY]);
-                    currentX = temp.x;
+                    length += getLineLength([currentX, temp.x * transformX], [currentY, currentY]);
+                    currentX = temp.x * transformX;
                     if(smallX > currentX){
                         smallX = currentX;
                     }
@@ -205,8 +229,8 @@ function getLength(string){
 
             case "vertical lineto":
                 if(temp.relative){
-                    length += getLineLength([currentX, currentX], [currentY, currentY + temp.y])
-                    currentY += temp.y;
+                    length += getLineLength([currentX, currentX], [currentY, currentY + temp.y * transformY])
+                    currentY += temp.y * transformY;
                     if(smallX > currentX){
                         smallX = currentX;
                     }
@@ -221,8 +245,8 @@ function getLength(string){
                     }
                 }
                 else{
-                    length += getLineLength([currentX, currentX], [currentY, temp.y]);
-                    currentY = temp.y;
+                    length += getLineLength([currentX, currentX], [currentY, temp.y * transformY]);
+                    currentY = temp.y * transformY;
                     if(smallX > currentX){
                         smallX = currentX;
                     }
@@ -258,176 +282,176 @@ function getLength(string){
 
             case "curveto":
                 if(temp.relative){
-                    length += getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).length();
-                    if(smallX > getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).bbox().x.min){
-                        smallX = getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).bbox().x.min;
+                    length += getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).length();
+                    if(smallX > getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().x.min){
+                        smallX = getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().x.min;
                     }
-                    if(smallY > getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).bbox().y.min){
-                        smallY = getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).bbox().y.min;
+                    if(smallY > getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().y.min){
+                        smallY = getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().y.min;
                     }
-                    if(largeX < getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).bbox().x.max){
-                        largeX = getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).bbox().x.max;
+                    if(largeX < getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().x.max){
+                        largeX = getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().x.max;
                     }
-                    if(largeY < getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).bbox().y.max){
-                        largeY = getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x2, currentX + temp.x], [currentY + temp.y1, currentY + temp.y2, currentY + temp.y]).bbox().y.max;
+                    if(largeY < getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().y.max){
+                        largeY = getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().y.max;
                     }
-                    smoothX = currentX + temp.x2;
-                    smoothY = currentY + temp.y2;
-                    currentX += temp.x;
-                    currentY += temp.y;
+                    smoothX = currentX + temp.x2 * transformX;
+                    smoothY = currentY + temp.y2 * transformY;
+                    currentX += temp.x * transformX;
+                    currentY += temp.y * transformY;
                 }
                 else{
-                    length += getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).length();
-                    if(smallX > getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).bbox().x.min){
-                        smallX = getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).bbox().x.min;
+                    length += getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).length();
+                    if(smallX > getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).bbox().x.min){
+                        smallX = getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).bbox().x.min;
                     }
-                    if(smallY > getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).bbox().y.min){
-                        smallY = getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).bbox().y.min;
+                    if(smallY > getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).bbox().y.min){
+                        smallY = getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).bbox().y.min;
                     }
-                    if(largeX < getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).bbox().x.max){
-                        largeX = getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).bbox().x.max;
+                    if(largeX < getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).bbox().x.max){
+                        largeX = getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).bbox().x.max;
                     }
-                    if(largeY < getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).bbox().y.max){
-                        largeY = getCurve(currentX, currentY, [temp.x1, temp.x2, temp.x], [temp.y1, temp.y2, temp.y]).bbox().y.max;
+                    if(largeY < getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).bbox().y.max){
+                        largeY = getCurve(currentX, currentY, [temp.x1 * transformX, temp.x2 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y2 * transformY, temp.y * transformY]).bbox().y.max;
                     }
-                    currentX = temp.x;
-                    currentY = temp.y;
-                    smoothX = temp.x2;
-                    smoothY = temp.y2;
+                    currentX = temp.x * transformX;
+                    currentY = temp.y * transformY;
+                    smoothX = temp.x2 * transformX;
+                    smoothY = temp.y2 * transformY;
                 }
                 break;
 
             case "smooth curveto":
                 if(temp.relative){
-                    length += getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).length();
-                    if(smallX > getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).bbox().bbox().x.min){
-                        smallX = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).bbox().bbox().x.min;
+                    length += getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).length();
+                    if(smallX > getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().bbox().x.min){
+                        smallX = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().bbox().x.min;
                     }
-                    if(smallY > getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).bbox().bbox().y.min){
-                        smallY = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).bbox().bbox().y.min;
+                    if(smallY > getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().bbox().y.min){
+                        smallY = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().bbox().y.min;
                     }
-                    if(largeX < getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).bbox().bbox().x.max){
-                        largeX = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).bbox().bbox().x.max;
+                    if(largeX < getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().bbox().x.max){
+                        largeX = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().bbox().x.max;
                     }
-                    if(largeY < getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).bbox().bbox().y.max){
-                        largeY = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y2, currentY + temp.y]).bbox().bbox().y.max;
+                    if(largeY < getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().bbox().y.max){
+                        largeY = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x2 * transformX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y2 * transformY, currentY + temp.y * transformY]).bbox().bbox().y.max;
                     }
-                    currentX += temp.x;
-                    currentY += temp.y;
+                    currentX += temp.x * transformX;
+                    currentY += temp.y * transformY;
                 }
                 else{
-                    length += getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).length();
-                    if(smallX > getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).bbox().x.min){
-                        smallX = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).bbox().x.min;
+                    length += getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).length();
+                    if(smallX > getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).bbox().x.min){
+                        smallX = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).bbox().x.min;
                     }
-                    if(smallY > getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).bbox().y.min){
-                        smallY = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).bbox().y.min;
+                    if(smallY > getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).bbox().y.min){
+                        smallY = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).bbox().y.min;
                     }
-                    if(largeX < getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).bbox().x.max){
-                        largeX = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).bbox().x.max;
+                    if(largeX < getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).bbox().x.max){
+                        largeX = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).bbox().x.max;
                     }
-                    if(largeY < getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).bbox().y.max){
-                        largeY = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2, temp.x], [currentY * 2 - smoothY, temp.y2, temp.y]).bbox().y.max;
+                    if(largeY < getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).bbox().y.max){
+                        largeY = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x2 * transformX, temp.x * transformX], [currentY * 2 - smoothY, temp.y2 * transformY, temp.y * transformY]).bbox().y.max;
                     }
-                    currentX = temp.x;
-                    currentY = temp.y;
+                    currentX = temp.x * transformX;
+                    currentY = temp.y * transformY;
                 }
                 break;
 
             case "quadratic curveto":
                 if(temp.relative){
-                    length += getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).length();
-                    if(smallX > getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).bbox().x.min){
-                        smallX = getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).bbox().x.min;
+                    length += getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).length();
+                    if(smallX > getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).bbox().x.min){
+                        smallX = getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).bbox().x.min;
                     }
-                    if(smallY > getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).bbox().y.min){
-                        smallY = getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).bbox().y.min;
+                    if(smallY > getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).bbox().y.min){
+                        smallY = getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).bbox().y.min;
                     }
-                    if(largeX < getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).bbox().x.max){
-                        largeX = getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).bbox().x.max;
+                    if(largeX < getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).bbox().x.max){
+                        largeX = getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).bbox().x.max;
                     }
-                    if(largeY < getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).bbox().y.max){
-                        largeY = getCurve(currentX, currentY, [currentX + temp.x1, currentX + temp.x], [currentY + temp.y1, currentY + temp.y]).bbox().y.max;
+                    if(largeY < getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).bbox().y.max){
+                        largeY = getCurve(currentX, currentY, [currentX + temp.x1 * transformX, currentX + temp.x * transformX], [currentY + temp.y1 * transformY, currentY + temp.y * transformY]).bbox().y.max;
                     }
-                    smoothX = currentX + temp.x1;
-                    smoothY = currentY + temp.y1;
-                    currentX += temp.x;
-                    currentY += temp.y;
+                    smoothX = currentX + temp.x1 * transformX;
+                    smoothY = currentY + temp.y1 * transformY;
+                    currentX += temp.x * transformX;
+                    currentY += temp.y * transformY;
                 }
                 else{
-                    length += getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).length();
-                    if(smallX > getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).bbox().x.min){
-                        smallX = getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).bbox().x.min;
+                    length += getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).length();
+                    if(smallX > getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).bbox().x.min){
+                        smallX = getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).bbox().x.min;
                     }
-                    if(smallY > getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).bbox().y.min){
-                        smallY = getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).bbox().y.min;
+                    if(smallY > getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).bbox().y.min){
+                        smallY = getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).bbox().y.min;
                     }
-                    if(largeX < getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).bbox().x.max){
-                        largeX = getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).bbox().x.max;
+                    if(largeX < getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).bbox().x.max){
+                        largeX = getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).bbox().x.max;
                     }
-                    if(largeY < getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).bbox().y.max){
-                        largeY = getCurve(currentX, currentY, [temp.x1, temp.x], [temp.y1, temp.y]).bbox().y.max;
+                    if(largeY < getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).bbox().y.max){
+                        largeY = getCurve(currentX, currentY, [temp.x1 * transformX, temp.x * transformX], [temp.y1 * transformY, temp.y * transformY]).bbox().y.max;
                     }
-                    currentX = temp.x;
-                    currentY = temp.y;
-                    smoothX = temp.x1;
-                    smoothY = temp.y1;
+                    currentX = temp.x * transformX;
+                    currentY = temp.y * transformY;
+                    smoothX = temp.x1 * transformX;
+                    smoothY = temp.y1 * transformY;
                 }
                 break;
 
             case "smooth quadratic cuveto":
                 if(temp.relative){
-                    length += getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).length();
-                    if(smallX > getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).bbox().x.min){
-                        smallX = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).bbox().x.min;
+                    length += getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).length();
+                    if(smallX > getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).bbox().x.min){
+                        smallX = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).bbox().x.min;
                     }
-                    if(smallY > getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).bbox().y.min){
-                        smallY = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).bbox().y.min;
+                    if(smallY > getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).bbox().y.min){
+                        smallY = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).bbox().y.min;
                     }
-                    if(largeX < getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).bbox().x.max){
-                        largeX = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).bbox().x.max;
+                    if(largeX < getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).bbox().x.max){
+                        largeX = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).bbox().x.max;
                     }
-                    if(largeY < getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).bbox().y.max){
-                        largeY = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x], [currentY * 2 - smoothY, currentY + temp.y]).bbox().y.max;
+                    if(largeY < getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).bbox().y.max){
+                        largeY = getCurve(currentX, currentY, [currentX * 2 - smoothX, currentX + temp.x * transformX], [currentY * 2 - smoothY, currentY + temp.y * transformY]).bbox().y.max;
                     }
-                    currentX += temp.x;
-                    currentY += temp.y;
+                    currentX += temp.x * transformX;
+                    currentY += temp.y * transformY;
                 }
                 else{
-                    length += getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).length();
-                    if(smallX > getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).bbox().x.min){
-                        smallX = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).bbox().x.min;
+                    length += getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).length();
+                    if(smallX > getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).bbox().x.min){
+                        smallX = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).bbox().x.min;
                     }
-                    if(smallY > getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).bbox().y.min){
-                        smallY = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).bbox().y.min;
+                    if(smallY > getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).bbox().y.min){
+                        smallY = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).bbox().y.min;
                     }
-                    if(largeX < getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).bbox().x.max){
-                        largeX = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).bbox().x.max;
+                    if(largeX < getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).bbox().x.max){
+                        largeX = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).bbox().x.max;
                     }
-                    if(largeY < getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).bbox().y.max){
-                        largeY = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x], [currentY * 2 - smoothY, temp.y]).bbox().y.max;
+                    if(largeY < getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).bbox().y.max){
+                        largeY = getCurve(currentX, currentY, [currentX * 2 - smoothX, temp.x * transformX], [currentY * 2 - smoothY, temp.y * transformY]).bbox().y.max;
                     }
-                    currentX = temp.x;
-                    currentY = temp.y;
+                    currentX = temp.x * transformX;
+                    currentY = temp.y * transformY;
                 }
                 break;
 
             case "elliptical arc":
                 if(temp.relative){
                     var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
-                        return SVGCurveLib.pointOnEllipticalArc({x: currentX , y: currentY}, temp.rx, temp.ry, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: currentX + temp.x, y: currentY + temp.y}, t);
+                        return SVGCurveLib.pointOnEllipticalArc({x: currentX , y: currentY}, temp.rx * transformX, temp.ry * transformY, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: currentX + temp.x * transformX, y: currentY + temp.y * transformY}, t);
                     });
                     length += ellipticalArcArcLengthResult.arcLength;
-                    currentX += temp.x;
-                    currentY += temp.y;
+                    currentX += temp.x * transformX;
+                    currentY += temp.y * transformY;
                 }
                 else{
                     var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
-                        return SVGCurveLib.pointOnEllipticalArc({x: currentX , y: currentY}, temp.rx, temp.ry, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: temp.x, y: temp.y}, t);
+                        return SVGCurveLib.pointOnEllipticalArc({x: currentX , y: currentY}, temp.rx * transformX, temp.ry * transformY, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: temp.x * transformX, y: temp.y * transformY}, t);
                     });
                     length += ellipticalArcArcLengthResult.arcLength;
-                    currentX = temp.x;
-                    currentY = temp.y;
+                    currentX = temp.x * transformX;
+                    currentY = temp.y * transformY;
                 }
                 break;
 
