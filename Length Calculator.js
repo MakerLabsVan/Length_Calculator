@@ -5,11 +5,21 @@ var svgparser = require('svg-path-parser');    //from https://github.com/hughsk/
 var SVGCurveLib = require('/Users/Jeremy/node_modules/svg-curve-lib/src/js/svg-curve-lib.js');  //from https://github.com/MadLittleMods/svg-curve-lib
 var xpath = require('xpath');
 var dom = require('xmldom').DOMParser;
-var materials = require('/Users/Jeremy/Materials_Data/Materials_Data.js');
+var materials_data = require('/Users/Jeremy/Materials_Data/Materials_Data.js');
 
 module.exports.getFilePathLength = getFilePathLength;    //make getFilePathLength available for testing
 
-//console.log(getFilePathLength("/test_files/line.svg"));
+console.log(getCost("acryllicClear_6mm", getFilePathLength("/test_files/line.svg")['#000000'], getFilePathLength("/test_files/line.svg").jogLength, "diyMember" ));
+
+//Costs calculations
+function getCost(material, pathLength, jogLength, membership){
+    var time = 0.0;
+    time += pathLength / (makerLabs.laserSpeed.maxCutSpeed * makerLabs.materials[material].speed / 100);
+    time += jogLength / makerLabs.laserSpeed.maxJogSpeed;
+    time = time * makerLabs.materials[material].passes;
+    time = time / 60; //convert from minutes to seconds
+    return time * makerLabs.cost[membership];
+}
 
 function getFilePathLength(string){
     var smallX = Number.MAX_VALUE;
