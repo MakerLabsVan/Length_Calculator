@@ -9,13 +9,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="8.2677164in"
-   height="11.692913in"
+   width="744.09448"
+   height="1052.3622"
    viewBox="0 0 744.09449 1052.3622"
-   id="svg3420"
+   id="svg4138"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="elliptical_arc.svg">
+   sodipodi:docname="jogging1.svg">
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -23,10 +23,10 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.0349675"
-     inkscape:cx="382.14286"
-     inkscape:cy="676.16753"
-     inkscape:document-units="in"
+     inkscape:zoom="0.62050881"
+     inkscape:cx="288.24504"
+     inkscape:cy="784.034"
+     inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1436"
@@ -34,11 +34,11 @@
      inkscape:window-x="4"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     units="in" />
+     units="px" />
   <defs
-     id="defs3422" />
+     id="defs4140" />
   <metadata
-     id="metadata3425">
+     id="metadata4143">
     <rdf:RDF>
       <cc:Work
          rdf:about="">
@@ -50,25 +50,42 @@
     </rdf:RDF>
   </metadata>
   <g
-     id="layer1"
+     inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     inkscape:label="Layer 1">
+     id="layer1">
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 111.42857,226.64792 -8.57143,191.42857 157.14286,0 0,-165.71429"
+       id="path4686"
+       inkscape:connector-curvature="0" />
+    <text
+       x="111.42857"
+       y="226.64792"
+       id="text4200">
+      <tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-weight:normal;font-size:80px;text-align:center;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+         dy="34"
+         id="tspan4202"
+         x="111.42857"
+         y="226.64792">5.7164 in</tspan>
+    </text>
     <path
        inkscape:connector-curvature="0"
-       id="path3428"
-       d="m 157.14286,501.42857 50,-25 a 27.95085,27.95085 0 0 1 50,-25 l 50,-25 a 55.826394,27.913197 60 0 1 50,-25 l 50,-25 a 83.718657,27.906219 60 0 1 50,-25 l 50,-25 a 111.6151,27.903776 60 0 1 50,-25 l 50,-25"
+       id="path4210"
+       d="m 388.39094,309.4235 c 0,0 -127.86392,-169.49541 -22.50428,12.99285 105.35965,182.48825 120.8107,-45.22447 120.8107,-45.22447"
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     <text
-       id="text3340"
-       y="501.42856"
-       x="157.14285">
+       id="text4146"
+       y="309.42349"
+       x="388.39093">
       <tspan
-         id="tspan3342"
+         id="tspan4148"
          dy="34"
          style="font-style:normal;font-weight:normal;font-size:80px;text-align:center;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
          sodipodi:role="line"
-         x="157.14285"
-         y="501.42856">10.3160 in</tspan>
+         x="388.39093"
+         y="309.42349">4.7698 in</tspan>
     </text>
   </g>
 </svg>
