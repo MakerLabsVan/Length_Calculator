@@ -7,25 +7,36 @@ var xpath = require('xpath');
 var dom = require('xmldom').DOMParser;
 var materials_data = require('/Users/Jeremy/Materials_Data/Materials_Data.js');
 
-module.exports.getFilePathLength = getFilePathLength;    //make getFilePathLength available for testing
+module.exports.getFilePathLength = getFilePathLength;    //make functions available for testing
+module.exports.getCost = getCost; 
 
-console.log(getCost("acryllicClear_6mm", getFilePathLength("/test_files/line.svg")['#000000'], getFilePathLength("/test_files/line.svg").jogLength, "diyMember" ));
+console.log(getCost("acryllicClear_6mm", "/test_files/jogging1.svg", "diyMember"));
+
+//Implement command line input, add test cases for jogging, inkscape page border (bounding box check), web server interface (accepts file and settings, returns cost using nodejs), port to browser side
 
 //Costs calculations
-function getCost(material, pathLength, jogLength, membership){
-    var time = 0.0;
-    time += pathLength / (makerLabs.laserSpeed.maxCutSpeed * makerLabs.materials[material].speed / 100);
-    time += jogLength / makerLabs.laserSpeed.maxJogSpeed;
-    time = time * makerLabs.materials[material].passes;
-    time = time / 60; //convert from minutes to seconds
-    return time * makerLabs.cost[membership];
+function getCost(material, file, membership){
+    var data = getFilePathLength(file, makerLabs.materials[material].passes);
+    var cost = {
+        time: 0.0,
+        money: 0.0,
+        pathLength: data['#000000'],
+        jogLength: data.jogLength
+    };
+    cost.time += cost.pathLength / (makerLabs.laserSpeed.maxCutSpeed * makerLabs.materials[material].speed / 100);
+    cost.time += cost.jogLength / makerLabs.laserSpeed.maxJogSpeed;
+    cost.time = cost.time / 60; //convert from minutes to seconds
+    cost.money = cost.time * makerLabs.cost[membership];
+    return cost;
 }
 
-function getFilePathLength(string){
+function getFilePathLength(string, passes){
+    passes = passes || 1;
     var smallX = Number.MAX_VALUE;
     var smallY = Number.MAX_VALUE;
     var largeX = Number.MAX_VALUE*-1;
     var largeY = Number.MAX_VALUE*-1;
+    var jog = {x: 0, y:0 };
     var map = {jogLength: 0};
     var data = fs.readFileSync(__dirname + string, "utf8");
 
@@ -60,52 +71,57 @@ function getFilePathLength(string){
                 }
             }
         }
-        for(var j = 0; j < path.length; j++){
-            var colour = path[j].nodeValue.substring(path[j].nodeValue.indexOf("stroke:")+7,path[j].nodeValue.indexOf("stroke:")+14);   //dealing with opacity, does not calculte length of invisible objects
-            if(path[j].nodeValue.indexOf(";",path[j].nodeValue.indexOf(";opacity:")+9) !== -1){
-                var opacity = path[j].nodeValue.substring(path[j].nodeValue.indexOf(";opacity:")+9,path[j].nodeValue.indexOf(";",path[j].nodeValue.indexOf(";opacity:")));
+        var colour = path[0].nodeValue.substring(path[0].nodeValue.indexOf("stroke:")+7,path[0].nodeValue.indexOf("stroke:")+14);   //dealing with opacity, does not calculte length of invisible objects
+        if(path[0].nodeValue.indexOf(";",path[0].nodeValue.indexOf(";opacity:")+9) !== -1){
+            var opacity = path[0].nodeValue.substring(path[0].nodeValue.indexOf(";opacity:")+9,path[0].nodeValue.indexOf(";",path[0].nodeValue.indexOf(";opacity:")));
+        }
+        else{
+            var opacity = path[0].nodeValue.substring(path[0].nodeValue.indexOf(";opacity:")+9);
+        }
+        if(opacity !== "0"){
+            if(map[colour] != undefined){
+                info = getLength(xpath.select("./@d", array[i])[0].nodeValue, transformX, transformY, passes);
+                map.jogLength += getLineLength([jog.x, info.startX], [jog.y, info.startY]);
+                jog.x = info.endX;
+                jog.y = info.endY;
+                map[colour] += info.length;
+                map.jogLength += info.jogLength;
+                if(smallX > info.smallX){
+                    smallX = info.smallX;
+                }
+                if(smallY > info.smallY){
+                    smallY = info.smallY;
+                }
+                if(largeX < info.largeX){
+                    largeX = info.largeX;
+                }
+                if(largeY < info.largeY){
+                    largeY = info.largeY;
+                }
             }
             else{
-                var opacity = path[j].nodeValue.substring(path[j].nodeValue.indexOf(";opacity:")+9);
+                info = getLength(xpath.select("./@d", array[i])[0].nodeValue, transformX, transformY, passes);
+                map.jogLength += getLineLength([jog.x, info.startX], [jog.y, info.startY]);
+                jog.x = info.endX;
+                jog.y = info.endY;
+                map[colour] = info.length;
+                map.jogLength += info.jogLength;
+                if(smallX > info.smallX){
+                    smallX = info.smallX;
+                }
+                if(smallY > info.smallY){
+                    smallY = info.smallY;
+                }
+                if(largeX < info.largeX){
+                    largeX = info.largeX;
+                }
+                if(largeY < info.largeY){
+                    largeY = info.largeY;
+                }
             }
-            if(opacity !== "0"){
-                if(map[colour] != undefined){
-                    info = getLength(xpath.select("./@d", array[i])[j].nodeValue, transformX, transformY);
-                    map[colour] += info.length;
-                    map.jogLength += info.jogLength;
-                    if(smallX > info.smallX){
-                        smallX = info.smallX;
-                    }
-                    if(smallY > info.smallY){
-                        smallY = info.smallY;
-                    }
-                    if(largeX < info.largeX){
-                        largeX = info.largeX;
-                    }
-                    if(largeY < info.largeY){
-                        largeY = info.largeY;
-                    }
-                }
-                else{
-                    info = getLength(xpath.select("./@d", array[i])[j].nodeValue, transformX, transformY);
-                    map[colour] = info.length;
-                    map.jogLength += info.jogLength;
-                    if(smallX > info.smallX){
-                        smallX = info.smallX;
-                    }
-                    if(smallY > info.smallY){
-                        smallY = info.smallY;
-                    }
-                    if(largeX < info.largeX){
-                        largeX = info.largeX;
-                    }
-                    if(largeY < info.largeY){
-                        largeY = info.largeY;
-                    }
-                }
-            } 
-        }
+        } 
     } 
+    map.jogLength += getLineLength([jog.x, 0], [jog.y, 0]);
     map.xWidth = largeX - smallX;
     map.yLength = largeY - smallY;
     return map;
@@ -144,9 +160,12 @@ function compareCurveValues(values, args){
 }
 
 //Calculates length from path data using helper methods
-function getLength(string, transform_X, transform_Y){
+function getLength(string, transform_X, transform_Y, passes){
+    var passes = passes;
     var transformX = transform_X;
     var transformY = transform_Y;
+    var startX = 0;
+    var startY = 0;
     var values = {
         currentX: 0.0,
         currentY: 0.0,
@@ -168,7 +187,12 @@ function getLength(string, transform_X, transform_Y){
         switch(temp.command){
             case "moveto":
                 if(temp.relative){
-                    jogLength += getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY])
+                    if(i != 0)
+                        jogLength += getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY])
+                    else{
+                        startX = temp.x * transformX;
+                        startY = temp.y * transformY;
+                    }
                     values.currentX += temp.x * transformX;
                     values.currentY += temp.y * transformY;
                     values.closeX += temp.x * transformX;
@@ -176,7 +200,12 @@ function getLength(string, transform_X, transform_Y){
                     compareLineValues(values);
                 }
                 else{
-                    jogLength += getLineLength([values.currentX, temp.x * transformX], [values.currentY, temp.y * transformY]);
+                    if(i != 0)
+                        jogLength += getLineLength([values.currentX, temp.x * transformX], [values.currentY, temp.y * transformY]);
+                    else{
+                        startX = temp.x * transformX;
+                        startY = temp.y * transformY;
+                    }
                     values.currentX = temp.x * transformX;
                     values.currentY = temp.y * transformY;
                     values.closeX = temp.x * transformX;
@@ -417,13 +446,21 @@ function getLength(string, transform_X, transform_Y){
                 console.log("Error. Unknown path command.");
         }
     }
-    var info = {};
-    info.length = length/90;        //dividng by 90 to convert pixels into inches
-    info.jogLength = jogLength/90;
+    var info = {
+        length: 0, jogLength: 0, smallX: 0, smallY:0, largeX:0, largeY: 0
+    };
+    info.length = length/90 * passes;        //dividng by 90 to convert pixels into inches
+    info.jogLength += jogLength/90 * passes;
+    info.jogLength += getLineLength([values.currentX, values.closeX], [values.currentY, values.closeY]) * (passes - 1) / 90;
+    info.smallX = values.smallX/90;
     info.smallX = values.smallX/90;
     info.smallY = values.smallY/90;
     info.largeX = values.largeX/90;
     info.largeY = values.largeY/90;
+    info.endX = values.currentX/90;
+    info.endY = values.currentY/90;
+    info.startX = startX/90;
+    info.startY = startY/90;
     return info;
 }
 
