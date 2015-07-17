@@ -6,85 +6,95 @@ var SVGCurveLib = require('/Users/Jeremy/node_modules/svg-curve-lib/src/js/svg-c
 var xpath = require('xpath');
 var dom = require('xmldom').DOMParser;
 var materials_data = require('/Users/Jeremy/Materials_Data/Materials_Data.js');
+var prompt = require('prompt');
 
-module.exports.getFilePathLength = getFilePathLength;    //make functions available for testing
+//make functions available for testing
+module.exports.getFilePathLength = getFilePathLength;
 module.exports.getCost = getCost; 
 
-console.log(getCost("acryllicClear_6mm", "/test_files/jogging1.svg", "diyMember"));
 
-//Implement command line input, add test cases for jogging, inkscape page border (bounding box check), web server interface (accepts file and settings, returns cost using nodejs), port to browser side
+//to add: inkscape page border (bounding box check), web server interface (accepts file and settings, returns cost using nodejs), port to browser side
 
-//Costs calculations
+//console.log(getCost('paper', '/test_files/elliptical_arc.svg', 'diyMember'));
+
+//command line interface
+prompt.start();
+prompt.get(['material', 'file', 'membership'], function(err, result){
+    console.log(getCost(result.material, result.file, result.membership));
+});
+
+//costs calculations
 function getCost(material, file, membership){
-    var data = getFilePathLength(file, makerLabs.materials[material].passes);
+    var data = getFilePathLength(file, MLV.materials[material].passes);
     var cost = {
-        time: 0.0,
-        money: 0.0,
-        pathLength: data['#000000'],
+        time: 0,
+        money: 0,
+        pathLength: data.total,     //calculates costs of all colours for now
         jogLength: data.jogLength
     };
-    cost.time += cost.pathLength / (makerLabs.laserSpeed.maxCutSpeed * makerLabs.materials[material].speed / 100);
-    cost.time += cost.jogLength / makerLabs.laserSpeed.maxJogSpeed;
+    cost.time += cost.pathLength / (MLV.laserSpeed.maxCutSpeed * MLV.materials[material].speed / 100);
+    cost.time += cost.jogLength / MLV.laserSpeed.maxJogSpeed;
     cost.time = cost.time / 60; //convert from minutes to seconds
-    cost.money = cost.time * makerLabs.cost[membership];
+    cost.money = cost.time * MLV.cost[membership];
     return cost;
 }
 
+//get path length of file
 function getFilePathLength(string, passes){
     passes = passes || 1;
     var smallX = Number.MAX_VALUE;
     var smallY = Number.MAX_VALUE;
-    var largeX = Number.MAX_VALUE*-1;
-    var largeY = Number.MAX_VALUE*-1;
+    var largeX = -Number.MAX_VALUE;
+    var largeY = -Number.MAX_VALUE;
     var jog = {x: 0, y:0 };
-    var map = {jogLength: 0};
-    var data = fs.readFileSync(__dirname + string, "utf8");
+    var map = {jogLength: 0, total:0};
+    var data = fs.readFileSync(__dirname + string, 'utf8');
 
-    while(data.indexOf("xmlns") !== -1){
-        var start = data.indexOf("xmlns");
-        var end = data.indexOf("\n", start);
+    while(data.indexOf('xmlns') !== -1){
+        var start = data.indexOf('xmlns');
+        var end = data.indexOf('\n', start);
         data = data.substring(0, start) + data.substring(end+2);
     }
 
     var doc = new dom().parseFromString(data);      //parse String into data structure
-    var array = xpath.select("//path[@style]", doc);    //find all path nodes with style attribute
+    var array = xpath.select('//path[@style]', doc);    //find all path nodes with style attribute
     for(var i = 0; i < array.length; i++){
-        var path = xpath.select("./@style", array[i]);
-        var transform = xpath.select("ancestor::*/@transform", array[i]);
+        var path = xpath.select('./@style', array[i]);
+        var transform = xpath.select('ancestor::*/@transform', array[i]);
         var transformX = 1;
         var transformY = 1;
         for (var k = 0; k < transform.length; k++){     //take into account transformations
             if(transform[k] !== undefined){
                 var temp = transform[k].nodeValue;
-                if (temp.indexOf("matrix") !== -1){
-                    transformX *= temp.substring(temp.indexOf("(")+1, temp.indexOf(","));
-                    var startingIndex = temp.indexOf(",", temp.indexOf(",", temp.indexOf(",") + 1) + 1) + 1;
-                    transformY *= temp.substring(startingIndex, temp.indexOf(",", startingIndex));
+                if (temp.indexOf('matrix') !== -1){
+                    transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
+                    var startingIndex = temp.indexOf(',', temp.indexOf(',', temp.indexOf(',') + 1) + 1) + 1;
+                    transformY *= temp.substring(startingIndex, temp.indexOf(',', startingIndex));
                 }
-                else if(temp.indexOf("scale") !== -1 && temp.indexOf(",") !== -1){
-                    transformX *= temp.substring(temp.indexOf("(")+1, temp.indexOf(","));
-                    transformY *= temp.substring(temp.indexOf(",")+1, temp.indexOf(")"));
+                else if(temp.indexOf('scale') !== -1 && temp.indexOf(',') !== -1){
+                    transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
+                    transformY *= temp.substring(temp.indexOf(',')+1, temp.indexOf(')'));
                 }
-                else if(temp.indexOf("scale") !== -1){
-                    transformX *= temp.substring(temp.indexOf("(")+1, temp.indexOf(")"));
+                else if(temp.indexOf('scale') !== -1){
+                    transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(')'));
                     transformY *= 1;
                 }
             }
         }
-        var colour = path[0].nodeValue.substring(path[0].nodeValue.indexOf("stroke:")+7,path[0].nodeValue.indexOf("stroke:")+14);   //dealing with opacity, does not calculte length of invisible objects
-        if(path[0].nodeValue.indexOf(";",path[0].nodeValue.indexOf(";opacity:")+9) !== -1){
-            var opacity = path[0].nodeValue.substring(path[0].nodeValue.indexOf(";opacity:")+9,path[0].nodeValue.indexOf(";",path[0].nodeValue.indexOf(";opacity:")));
+        var style_array = path[0].nodeValue.split(';');
+        var style = {};     //create object containing style attributes
+        for(var l = 0; l < style_array.length; l++){
+            style[style_array[l].substring(0,style_array[l].indexOf(":"))] = style_array[l].substring(style_array[l].indexOf(":")+1);
         }
-        else{
-            var opacity = path[0].nodeValue.substring(path[0].nodeValue.indexOf(";opacity:")+9);
-        }
-        if(opacity !== "0"){
+        var colour = style.stroke;
+        if(style.opacity === undefined || style.opacity !== '0'){
             if(map[colour] != undefined){
-                info = getLength(xpath.select("./@d", array[i])[0].nodeValue, transformX, transformY, passes);
+                var info = getLength(xpath.select('./@d', array[i])[0].nodeValue, transformX, transformY, passes);
                 map.jogLength += getLineLength([jog.x, info.startX], [jog.y, info.startY]);
                 jog.x = info.endX;
                 jog.y = info.endY;
                 map[colour] += info.length;
+                map.total += info.length;
                 map.jogLength += info.jogLength;
                 if(smallX > info.smallX){
                     smallX = info.smallX;
@@ -100,11 +110,12 @@ function getFilePathLength(string, passes){
                 }
             }
             else{
-                info = getLength(xpath.select("./@d", array[i])[0].nodeValue, transformX, transformY, passes);
+                info = getLength(xpath.select('./@d', array[i])[0].nodeValue, transformX, transformY, passes);
                 map.jogLength += getLineLength([jog.x, info.startX], [jog.y, info.startY]);
                 jog.x = info.endX;
                 jog.y = info.endY;
                 map[colour] = info.length;
+                map.total += info.length;
                 map.jogLength += info.jogLength;
                 if(smallX > info.smallX){
                     smallX = info.smallX;
@@ -127,38 +138,6 @@ function getFilePathLength(string, passes){
     return map;
 }
 
-//compares minimum and maximum coordinates of lines for bounding box calculations
-function compareLineValues(values){
-    if(values.smallX > values.currentX){
-        values.smallX = values.currentX;
-    }
-    if(values.smallY > values.currentY){
-        values.smallY = values.currentY;
-    }
-    if(values.largeX < values.currentX){
-        values.largeX = values.currentX;
-    }
-    if(values.largeY < values.currentY){
-        values.largeY = values.currentY;
-    }
-}
-
-//compares minimum and maximum coordinates of bezier curves for bounding box calculations
-function compareCurveValues(values, args){
-    if(values.smallX > getCurve.apply(null, args).bbox().x.min){
-        values.smallX = getCurve.apply(null, args).bbox().x.min;
-    }
-    if(values.smallY > getCurve.apply(null, args).bbox().y.min){
-        values.smallY = getCurve.apply(null, args).bbox().y.min;
-    }
-    if(values.largeX < getCurve.apply(null, args).bbox().x.max){
-        values.largeX = getCurve.apply(null, args).bbox().x.max;
-    }
-    if(values.largeY < getCurve.apply(null, args).bbox().y.max){
-        values.largeY = getCurve.apply(null, args).bbox().y.max;
-    }
-}
-
 //Calculates length from path data using helper methods
 function getLength(string, transform_X, transform_Y, passes){
     var passes = passes;
@@ -167,28 +146,29 @@ function getLength(string, transform_X, transform_Y, passes){
     var startX = 0;
     var startY = 0;
     var values = {
-        currentX: 0.0,
-        currentY: 0.0,
+        currentX: 0,
+        currentY: 0,
         smallX: Number.MAX_VALUE,
-        largeX: Number.MAX_VALUE*-1,
+        largeX: -Number.MAX_VALUE,
         smallY: Number.MAX_VALUE,
-        largeY: Number.MAX_VALUE*-1,
-        closeX: 0.0, //for closing path calculations
-        closeY: 0.0,
-        smoothX: 0.0, //for shorthand curve calculations
-        smoothY: 0.0
+        largeY: -Number.MAX_VALUE,
+        closeX: 0, //for closing path calculations
+        closeY: 0,
+        smoothX: 0, //for shorthand curve calculations
+        smoothY: 0
     };
     var arrayOfValues = svgparser(string);
-    var length = 0.0;
-    var jogLength = 0.0;
+    var length = 0;
+    var jogLength = 0;
 
     for(var i = 0; i < arrayOfValues.length; i++) {
         var temp = arrayOfValues[i];
         switch(temp.command){
-            case "moveto":
+            case 'moveto':
                 if(temp.relative){
-                    if(i != 0)
+                    if(i != 0){
                         jogLength += getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY])
+                    }
                     else{
                         startX = temp.x * transformX;
                         startY = temp.y * transformY;
@@ -200,8 +180,9 @@ function getLength(string, transform_X, transform_Y, passes){
                     compareLineValues(values);
                 }
                 else{
-                    if(i != 0)
+                    if(i != 0){
                         jogLength += getLineLength([values.currentX, temp.x * transformX], [values.currentY, temp.y * transformY]);
+                    }
                     else{
                         startX = temp.x * transformX;
                         startY = temp.y * transformY;
@@ -214,7 +195,7 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 break;
 
-            case "lineto":
+            case 'lineto':
                 if(temp.relative){
                     length += getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY])
                     values.currentX += temp.x * transformX;
@@ -229,7 +210,7 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 break;
 
-            case "horizontal lineto":
+            case 'horizontal lineto':
                 if(temp.relative){
                     length += getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY])
                     values.currentX += temp.x * transformX;
@@ -242,7 +223,7 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 break;
 
-            case "vertical lineto":
+            case 'vertical lineto':
                 if(temp.relative){
                     length += getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + temp.y * transformY])
                     values.currentY += temp.y * transformY;
@@ -255,14 +236,14 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 break;
 
-            case "closepath":
+            case 'closepath':
                 length += getLineLength([values.currentX, values.closeX], [values.currentY, values.closeY]);
                 values.currentX = values.closeX;
                 values.currentY = values.closeY;
                 compareLineValues(values);
                 break;
 
-            case "curveto":
+            case 'curveto':
                 if(temp.relative){
                     var args = [
                         values.currentX,
@@ -305,7 +286,7 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 break;
 
-            case "smooth curveto":
+            case 'smooth curveto':
                 if(temp.relative){
                     var args = [
                         values.currentX,
@@ -345,7 +326,7 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 break;
 
-            case "quadratic curveto":
+            case 'quadratic curveto':
                 if(temp.relative){
                     var args = [
                         values.currentX,
@@ -386,7 +367,7 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 break;
 
-            case "smooth quadratic cuveto":
+            case 'smooth quadratic cuveto':
                 if(temp.relative){
                     var args = [
                         values.currentX,
@@ -423,10 +404,12 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 break;
 
-            case "elliptical arc":
+            case 'elliptical arc':
                 if(temp.relative){
                     var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
-                        return SVGCurveLib.pointOnEllipticalArc({x: values.currentX , y: values.currentY}, temp.rx * transformX, temp.ry * transformY, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: values.currentX + temp.x * transformX, y: values.currentY + temp.y * transformY}, t);
+                        var point = SVGCurveLib.pointOnEllipticalArc({x: values.currentX , y: values.currentY}, temp.rx * transformX, temp.ry * transformY, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: values.currentX + temp.x * transformX, y: values.currentY + temp.y * transformY}, t);
+                        compareArcValues(values,point);
+                        return point;
                     });
                     length += ellipticalArcArcLengthResult.arcLength;
                     values.currentX += temp.x * transformX;
@@ -434,7 +417,9 @@ function getLength(string, transform_X, transform_Y, passes){
                 }
                 else{
                     var ellipticalArcArcLengthResult = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
-                        return SVGCurveLib.pointOnEllipticalArc({x: values.currentX , y: values.currentY}, temp.rx * transformX, temp.ry * transformY, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: temp.x * transformX, y: temp.y * transformY}, t);
+                        var point = SVGCurveLib.pointOnEllipticalArc({x: values.currentX , y: values.currentY}, temp.rx * transformX, temp.ry * transformY, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: temp.x * transformX, y: temp.y * transformY}, t);
+                        compareArcValues(values,point);
+                        return point;
                     });
                     length += ellipticalArcArcLengthResult.arcLength;
                     values.currentX = temp.x * transformX;
@@ -443,24 +428,23 @@ function getLength(string, transform_X, transform_Y, passes){
                 break;
 
             default:
-                console.log("Error. Unknown path command.");
+                console.log('Error. Unknown path command.');
         }
     }
-    var info = {
-        length: 0, jogLength: 0, smallX: 0, smallY:0, largeX:0, largeY: 0
-    };
-    info.length = length/90 * passes;        //dividng by 90 to convert pixels into inches
-    info.jogLength += jogLength/90 * passes;
+    var info = {};
+    var PIXELS_PER_INCH = 90; //dividng by 90 to convert pixels into inches
+    info.length = length/PIXELS_PER_INCH * passes;
+    info.jogLength = jogLength/PIXELS_PER_INCH * passes;
     info.jogLength += getLineLength([values.currentX, values.closeX], [values.currentY, values.closeY]) * (passes - 1) / 90;
-    info.smallX = values.smallX/90;
-    info.smallX = values.smallX/90;
-    info.smallY = values.smallY/90;
-    info.largeX = values.largeX/90;
-    info.largeY = values.largeY/90;
-    info.endX = values.currentX/90;
-    info.endY = values.currentY/90;
-    info.startX = startX/90;
-    info.startY = startY/90;
+    info.smallX = values.smallX/PIXELS_PER_INCH;
+    info.smallX = values.smallX/PIXELS_PER_INCH;
+    info.smallY = values.smallY/PIXELS_PER_INCH;
+    info.largeX = values.largeX/PIXELS_PER_INCH;
+    info.largeY = values.largeY/PIXELS_PER_INCH;
+    info.endX = values.currentX/PIXELS_PER_INCH;
+    info.endY = values.currentY/PIXELS_PER_INCH;
+    info.startX = startX/PIXELS_PER_INCH;
+    info.startY = startY/PIXELS_PER_INCH;
     return info;
 }
 
@@ -480,4 +464,52 @@ function getCurve(x_current, y_current, x_values, y_values){
     else
         var curve = new bezier(x_current,y_current , x_values[0],y_values[0] , x_values[1],y_values[1]);
     return curve;
+}
+
+//compares minimum and maximum coordinates of lines for bounding box calculations
+function compareLineValues(values){
+    if(values.smallX > values.currentX){
+        values.smallX = values.currentX;
+    }
+    if(values.smallY > values.currentY){
+        values.smallY = values.currentY;
+    }
+    if(values.largeX < values.currentX){
+        values.largeX = values.currentX;
+    }
+    if(values.largeY < values.currentY){
+        values.largeY = values.currentY;
+    }
+}
+
+//compares minimum and maximum coordinates of bezier curves for bounding box calculations
+function compareCurveValues(values, args){
+    if(values.smallX > getCurve.apply(null, args).bbox().x.min){
+        values.smallX = getCurve.apply(null, args).bbox().x.min;
+    }
+    if(values.smallY > getCurve.apply(null, args).bbox().y.min){
+        values.smallY = getCurve.apply(null, args).bbox().y.min;
+    }
+    if(values.largeX < getCurve.apply(null, args).bbox().x.max){
+        values.largeX = getCurve.apply(null, args).bbox().x.max;
+    }
+    if(values.largeY < getCurve.apply(null, args).bbox().y.max){
+        values.largeY = getCurve.apply(null, args).bbox().y.max;
+    }
+}
+
+//compares minimum and maximum coordinates of elliptical arcs for bounding box calculations
+function compareArcValues(values, point){
+    if(values.smallX > point.x){
+        values.smallX = point.x;
+    }
+    if(values.smallY > point.y){
+        values.smallY = point.y;
+    }
+    if(values.largeX < point.x){
+        values.largeX = point.x;
+    }
+    if(values.largeY < point.y){
+        values.largeY = point.y;
+    }
 }
