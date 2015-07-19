@@ -32,17 +32,17 @@ describe('Get the total length of all lines in svg', function() {
 		var map = length_calculator.getFilePathLength("/test_files/design3.svg");
 		map['#ff0000'].toFixed(2).should.be.exactly('337.66');
 	})
-	it('design 4', function(){
+	it('design 4, out of bounds check', function(){
 		var map = length_calculator.getFilePathLength("/test_files/design4.svg");
-		map['#000000'].toFixed(2).should.be.exactly('106.57');
+		should.not.exist(map['#000000']);
 	})
-	it('design 5', function(){
+	it('design 5, out of bounds check', function(){
 		var map = length_calculator.getFilePathLength("/test_files/design5.svg");
-		map['#000000'].toFixed(2).should.be.exactly('131.18');
+		should.not.exist(map['#000000']);
 	})
-	it('design 6', function(){
+	it('design 6, out of bounds check', function(){
 		var map = length_calculator.getFilePathLength("/test_files/design6.svg");
-		map['#000000'].toFixed(2).should.be.exactly('191.22');
+		should.not.exist(map['#000000']);
 	})
 	it('design 7 with scaling', function(){
 		var map = length_calculator.getFilePathLength("/test_files/design7.svg");
