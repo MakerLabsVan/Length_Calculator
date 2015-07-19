@@ -13,15 +13,15 @@ module.exports.getFilePathLength = getFilePathLength;
 module.exports.getCost = getCost; 
 
 
-//to add: inkscape page border (bounding box check), web server interface (accepts file and settings, returns cost using nodejs), port to browser side
+//web server interface (accepts file and settings, returns cost using nodejs), port to browser side
 
-//console.log(getCost('paper', '/test_files/elliptical_arc.svg', 'diyMember'));
+// console.log(getFilePathLength("/test_files/group1.svg"));
 
 //command line interface
-prompt.start();
-prompt.get(['material', 'file', 'membership'], function(err, result){
-    console.log(getCost(result.material, result.file, result.membership));
-});
+// prompt.start();
+// prompt.get(['material', 'file', 'membership'], function(err, result){
+//     console.log(getCost(result.material, result.file, result.membership));
+// });
 
 //costs calculations
 function getCost(material, file, membership){
@@ -63,6 +63,8 @@ function getFilePathLength(string, passes){
         var transform = xpath.select('ancestor::*/@transform', array[i]);
         var transformX = 1;
         var transformY = 1;
+        var translateX = 0;
+        var translateY = 0;
         for (var k = 0; k < transform.length; k++){     //take into account transformations
             if(transform[k] !== undefined){
                 var temp = transform[k].nodeValue;
@@ -70,6 +72,8 @@ function getFilePathLength(string, passes){
                     transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
                     var startingIndex = temp.indexOf(',', temp.indexOf(',', temp.indexOf(',') + 1) + 1) + 1;
                     transformY *= temp.substring(startingIndex, temp.indexOf(',', startingIndex));
+                    translateX += parseFloat(temp.substring(temp.lastIndexOf(',', temp.lastIndexOf(',') - 1) + 1, temp.lastIndexOf(',')));
+                    translateY += parseFloat(temp.substring(temp.lastIndexOf(',') + 1, temp.indexOf(')')));
                 }
                 else if(temp.indexOf('scale') !== -1 && temp.indexOf(',') !== -1){
                     transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
@@ -79,6 +83,10 @@ function getFilePathLength(string, passes){
                     transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(')'));
                     transformY *= 1;
                 }
+                else if(temp.indexOf('translate') !== -1){
+                    translateX += parseFloat(temp.substring(temp.indexOf('(')+1, temp.indexOf(',')));
+                    translateY += parseFloat(temp.substring(temp.indexOf(',')+1, temp.indexOf(')')));
+                }
             }
         }
         var style_array = path[0].nodeValue.split(';');
@@ -87,12 +95,14 @@ function getFilePathLength(string, passes){
             style[style_array[l].substring(0,style_array[l].indexOf(":"))] = style_array[l].substring(style_array[l].indexOf(":")+1);
         }
         var colour = style.stroke;
-        if(style.opacity === undefined || style.opacity !== '0'){
+        var info = getLength(xpath.select('./@d', array[i])[0].nodeValue, transformX, transformY, translateX, translateY, passes);
+        var width = toInches(xpath.select('/svg/@width', doc)[0].nodeValue);
+        var height = toInches(xpath.select('/svg/@height', doc)[0].nodeValue);
+        if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0 && info.largeX <= width && info.largeY <= height){ //opacity and in-bounds check
+            map.jogLength += getLineLength([jog.x, info.startX], [jog.y, info.startY]);
+            jog.x = info.endX;
+            jog.y = info.endY;
             if(map[colour] != undefined){
-                var info = getLength(xpath.select('./@d', array[i])[0].nodeValue, transformX, transformY, passes);
-                map.jogLength += getLineLength([jog.x, info.startX], [jog.y, info.startY]);
-                jog.x = info.endX;
-                jog.y = info.endY;
                 map[colour] += info.length;
                 map.total += info.length;
                 map.jogLength += info.jogLength;
@@ -110,10 +120,6 @@ function getFilePathLength(string, passes){
                 }
             }
             else{
-                info = getLength(xpath.select('./@d', array[i])[0].nodeValue, transformX, transformY, passes);
-                map.jogLength += getLineLength([jog.x, info.startX], [jog.y, info.startY]);
-                jog.x = info.endX;
-                jog.y = info.endY;
                 map[colour] = info.length;
                 map.total += info.length;
                 map.jogLength += info.jogLength;
@@ -139,10 +145,12 @@ function getFilePathLength(string, passes){
 }
 
 //Calculates length from path data using helper methods
-function getLength(string, transform_X, transform_Y, passes){
+function getLength(string, transform_X, transform_Y, translate_X, translate_Y, passes){
     var passes = passes;
-    var transformX = transform_X;
-    var transformY = transform_Y;
+    var transformX = transform_X || 1;
+    var transformY = transform_Y || 1;
+    var translateX = translate_X || 0;
+    var translateY = translate_Y || 0;
     var startX = 0;
     var startY = 0;
     var values = {
@@ -436,15 +444,14 @@ function getLength(string, transform_X, transform_Y, passes){
     info.length = length/PIXELS_PER_INCH * passes;
     info.jogLength = jogLength/PIXELS_PER_INCH * passes;
     info.jogLength += getLineLength([values.currentX, values.closeX], [values.currentY, values.closeY]) * (passes - 1) / 90;
-    info.smallX = values.smallX/PIXELS_PER_INCH;
-    info.smallX = values.smallX/PIXELS_PER_INCH;
-    info.smallY = values.smallY/PIXELS_PER_INCH;
-    info.largeX = values.largeX/PIXELS_PER_INCH;
-    info.largeY = values.largeY/PIXELS_PER_INCH;
-    info.endX = values.currentX/PIXELS_PER_INCH;
-    info.endY = values.currentY/PIXELS_PER_INCH;
-    info.startX = startX/PIXELS_PER_INCH;
-    info.startY = startY/PIXELS_PER_INCH;
+    info.smallX = values.smallX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
+    info.smallY = values.smallY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
+    info.largeX = values.largeX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
+    info.largeY = values.largeY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
+    info.startX = startX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
+    info.startY = startY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
+    info.endX = values.currentX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
+    info.endY = values.currentY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
     return info;
 }
 
@@ -511,5 +518,27 @@ function compareArcValues(values, point){
     }
     if(values.largeY < point.y){
         values.largeY = point.y;
+    }
+}
+
+//converts units to inches
+function toInches(string){
+    if(string.indexOf('in') != -1){
+        return parseFloat(string.substring(0,string.indexOf('in')));
+    }
+    else if(string.indexOf('cm') != -1){
+        return parseFloat(string.substring(0,string.indexOf('cm'))) / 2.54;
+    }
+    else if(string.indexOf('mm') != -1){
+        return parseFloat(string.substring(0,string.indexOf('mm'))) / 25.4;
+    }
+    else if(string.indexOf('pt') != -1){
+        return parseFloat(string.substring(0,string.indexOf('pt'))) / 72;
+    }
+    else if(string.indexOf('pc') != -1){
+        return parseFloat(string.substring(0,string.indexOf('pc'))) / 6;
+    }
+    else{
+        return parseFloat(string) / 90;
     }
 }
