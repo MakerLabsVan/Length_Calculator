@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+  <% include templates/header.ejs %>
+    <h1><%= title %></h1>
+    <form id       =  "uploadForm"
+     enctype   =  "multipart/form-data"
+     action    =  "/calculator/upload"
+     method    =  "post"
+	>
+		<h3 style="font-family:verdana"> 1. Select Membership:</h3>
+		<select name="membership">
+    		<option value="diyMember">DIY - MakerLabs Member</option>
+        	<option value="diyPublic">DIY - Public</option>
+        	<option value="fullService">Full service - regular</option>
+        	<option value="fullServiceRush">Full service - rush</option>
+    	</select><br>
+
+		<h3 style="font-family:verdana">2. Select Material:</h3>
+		<select name="material">
+    		<option value="paper">Paper</option>
+        	<option value="balticBirch_3mm">Baltic Birch - 3mm</option>
+        	<option value="acryllicClear_6mm">Clear Acryllic - 6mm</option>
+   		</select><br>
+
+		<h3 style="font-family:verdana">3. Upload svg file:</h3>
+		<input type="file" name="userImage" />
+		<input type="submit" value="Calculate Cost" name="submit">
+	</form>
+  </body>
+</html>
