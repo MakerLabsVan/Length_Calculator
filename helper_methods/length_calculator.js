@@ -35,12 +35,14 @@ var LC = {
 
     //get path length of file
     getFilePathLength: function(string, passes){
-        passes = passes || 1;
+        var passes = passes;
         var smallX = Number.MAX_VALUE;
         var smallY = Number.MAX_VALUE;
         var largeX = -Number.MAX_VALUE;
         var largeY = -Number.MAX_VALUE;
-        var jog = {x: 0, y:0 };
+        var startX = 0;
+        var startY = 0;
+        var jog = {x: 0, y: 0 };
         var map = {jogLength: 0, total:0};
         var data = fs.readFileSync(__dirname + '/..' + string, 'utf8');
 
@@ -83,6 +85,7 @@ var LC = {
                     }
                 }
             }
+
             var style_array = path[0].nodeValue.split(';');
             var style = {};     //create object containing style attributes
             for(var l = 0; l < style_array.length; l++){
@@ -93,10 +96,16 @@ var LC = {
             var width = LC.toInches(xpath.select('/svg/@width', doc)[0].nodeValue);
             var height = LC.toInches(xpath.select('/svg/@height', doc)[0].nodeValue);
             if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0 && info.largeX <= width && info.largeY <= height){ //opacity and in-bounds check
-                map.jogLength += LC.getLineLength([jog.x, info.startX], [jog.y, info.startY]);
+                if(i != 0){
+                    map.jogLength += LC.getLineLength([jog.x, info.startX], [jog.y, info.startY]);
+                }
+                else{
+                    startX = info.startX;
+                    startY = info.startY;
+                }
                 jog.x = info.endX;
                 jog.y = info.endY;
-                if(map[colour] != undefined){
+                if(map[colour] !== undefined){
                     map[colour] += info.length;
                     map.total += info.length;
                     map.jogLength += info.jogLength;
@@ -116,15 +125,17 @@ var LC = {
                 }
             } 
         } 
-        map.jogLength += LC.getLineLength([jog.x, 0], [jog.y, 0]);
+        map.jogLength += LC.getLineLength([jog.x, smallX], [jog.y, smallY]);
+        map.jogLength += LC.getLineLength([startX, smallX], [startY, smallY]);
         map.xWidth = largeX - smallX;
         map.yLength = largeY - smallY;
+        map.perimeter = map.xWidth * 2 + map.yLength * 2;
         return map;
     },
 
     //Calculates length from path data using helper methods
     getLength: function(string, transform_X, transform_Y, translate_X, translate_Y, passes){
-        var passes = passes;
+        var passes = passes || 1;
         var transformX = transform_X || 1;
         var transformY = transform_Y || 1;
         var translateX = translate_X || 0;
@@ -152,7 +163,7 @@ var LC = {
             switch(temp.command){
                 case 'moveto':
                     if(temp.relative){
-                        if(i != 0){
+                        if(i !== 0){
                             jogLength += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY])
                         }
                         else{
@@ -166,7 +177,7 @@ var LC = {
                         LC.compareLineValues(values);
                     }
                     else{
-                        if(i != 0){
+                        if(i !== 0){
                             jogLength += LC.getLineLength([values.currentX, temp.x * transformX], [values.currentY, temp.y * transformY]);
                         }
                         else{
@@ -477,19 +488,19 @@ var LC = {
 
     //converts units to inches
     toInches: function(string){
-        if(string.indexOf('in') != -1){
+        if(string.indexOf('in') !== -1){
             return parseFloat(string.substring(0,string.indexOf('in')));
         }
-        else if(string.indexOf('cm') != -1){
+        else if(string.indexOf('cm') !== -1){
             return parseFloat(string.substring(0,string.indexOf('cm'))) / 2.54;
         }
-        else if(string.indexOf('mm') != -1){
+        else if(string.indexOf('mm') !== -1){
             return parseFloat(string.substring(0,string.indexOf('mm'))) / 25.4;
         }
-        else if(string.indexOf('pt') != -1){
+        else if(string.indexOf('pt') !== -1){
             return parseFloat(string.substring(0,string.indexOf('pt'))) / 72;
         }
-        else if(string.indexOf('pc') != -1){
+        else if(string.indexOf('pc') !== -1){
             return parseFloat(string.substring(0,string.indexOf('pc'))) / 6;
         }
         else{
@@ -499,5 +510,6 @@ var LC = {
         
 }
 
+//console.log(LC.getFilePathLength("/test/test_files/colours.svg", 2));
 //make functions available for testing
 module.exports = LC;

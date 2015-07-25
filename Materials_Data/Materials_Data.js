@@ -10,7 +10,7 @@ var materials = {
 };
 
 //units in inches/second
-var laserSpeed = {maxCutSpeed: 1, maxJogSpeed: 2, maxRasterSpeed: 2};
+var laserSpeed = {maxCutSpeed: 0.92, maxJogSpeed: 6.4, maxRasterSpeed: 2};
 
 //units in CAD dollars/minute
 var cost = {diyMember: 1, diyPublic: 1.5, fullService: 2, fullServiceRush: 3};

@@ -81,21 +81,21 @@ describe('Get the total length of all lines in svg', function() {
 	it('jogging1', function(){
 		var cost = LC.getCost('acryllicClear_6mm', '/test/test_files/jogging1.svg', 'diyMember');
 		cost.pathLength.toFixed(2).should.be.exactly('20.97');
-		cost.jogLength.toFixed(2).should.be.exactly('13.42');
+		cost.jogLength.toFixed(2).should.be.exactly('8.78');
 	})
 	it('jogging2', function(){
 		var cost = LC.getCost('paper', '/test/test_files/jogging1.svg', 'diyMember');
 		cost.pathLength.toFixed(2).should.be.exactly('10.49');
-		cost.jogLength.toFixed(2).should.be.exactly('10.59');
+		cost.jogLength.toFixed(2).should.be.exactly('5.96');
 	})
 	it('jogging3', function(){
 		var cost = LC.getCost('paper', '/test/test_files/bezier_curve.svg', 'diyMember');
 		cost.pathLength.toFixed(2).should.be.exactly('21.29');
-		cost.jogLength.toFixed(2).should.be.exactly('17.80');
+		cost.jogLength.toFixed(2).should.be.exactly('11.65');
 	})
 	it('jogging4', function(){
 		var cost = LC.getCost('acryllicClear_6mm', '/test/test_files/colours.svg', 'diyMember');
 		cost.pathLength.toFixed(2).should.be.exactly('58.77');
-		cost.jogLength.toFixed(2).should.be.exactly('40.35');
+		cost.jogLength.toFixed(2).should.be.exactly('35.32');
 	})
 })
