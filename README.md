@@ -11,27 +11,25 @@ Output: length of each set of line colors in inches, jog length, cost, and time
 
 Example
 -------
-In Terminal:
-
-> $ node "project folder location"/helper_methods/length_calculator
+> $ `node "project folder location"/helper_methods/length_calculator`
 >
-> $ prompt: material: paper
+> $ prompt: material: `paper`
 >
-> $ prompt: file: /test/test_files/colours.svg
+> $ prompt: file: `/test/test_files/colours.svg`
 >
-> $ prompt: membership: diyMember
+> $ prompt: membership: `diyMember`
 
 Installation
 ------------
-Download project from https://github.com/MakerLabsVan/Length_Calculator
+* Download project from https://github.com/MakerLabsVan/Length_Calculator
 
-Install node.js from https://nodejs.org/download/
+* Install node.js from https://nodejs.org/download/
 
-Install dependencies through terminal:
+* Install dependencies through terminal:
 
-> $ cd "project folder location"
+> $ `cd "project folder location"`
 >
-> $ npm install
+> $ `npm install`
 
 Usage
 -----
@@ -51,13 +49,21 @@ To launch app:
 
 Run Tests
 ---------
-In Terminal:
+> $ `sudo npm install -g mocha`
+>
+> $ `cd "project folder location"`
+>
+> $ `mocha`
 
-> $ sudo npm install -g mocha
+Test Website
+-----------
+Launch Server:
+
+> $ `cd "project folder location"`
 >
-> $ cd "project folder location"
->
-> $ mocha
+> $ `npm start`
+
+To view website, type localhost:3000 in URL
 
 History
 -------
