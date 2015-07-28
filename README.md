@@ -13,7 +13,6 @@ Example
 -------
 In Terminal:
 
-`
 > $ node "project folder location"/helper_methods/length_calculator
 >
 > $ prompt: material: paper
@@ -21,7 +20,6 @@ In Terminal:
 > $ prompt: file: /test/test_files/colours.svg
 >
 > $ prompt: membership: diyMember
-`
 
 Installation
 ------------
@@ -31,11 +29,9 @@ Install node.js from https://nodejs.org/download/
 
 Install dependencies through terminal:
 
-`
 > $ cd "project folder location"
 >
 > $ npm install
-`
 
 Usage
 -----
@@ -53,19 +49,20 @@ To launch app:
 
 6. Input membership status
 
-
 Run Tests
 ---------
 In Terminal:
 
-`
 > $ sudo npm install -g mocha
 >
 > $ cd "project folder location"
 >
 > $ mocha
-`
 
 History
 -------
 * Jeremy H's 2015 summer internship project at MakerLabs
+
+License
+-------
+MIT
