@@ -12,6 +12,16 @@
     "ejs": "~2.3.3",
     "express": "~4.13.1",
     "morgan": "~1.6.1",
-    "serve-favicon": "~2.3.0"
+    "serve-favicon": "~2.3.0",
+    "bezier-js": "~1.0",
+    "svg-path-parser": "~1.0.1",
+    "xpath": "~0.0.9",
+    "xmldom": "~0.1.19",
+    "prompt": "~0.2.14",
+    "svg-curve-lib": "~0.2.0",
+    "multer": "~1.0.1",
+    "should": "~7.0.2",
+    "mocha": "~2.2.5",
+    "jade": "~1.11.0"
   }
 }

@@ -5,16 +5,16 @@ var svgparser = require('svg-path-parser');    //from https://github.com/hughsk/
 var SVGCurveLib = require('/Users/Jeremy/node_modules/svg-curve-lib/src/js/svg-curve-lib.js');  //from https://github.com/MadLittleMods/svg-curve-lib
 var xpath = require('xpath');
 var dom = require('xmldom').DOMParser;
-var materials_data = require(__dirname + '/../Materials_Data/Materials_Data.js');
+var materials_data = require(__dirname + '/../materials_data/materials_data.js');
 var prompt = require('prompt');
 
 //Its not about the length or cleanliness of the code. Its about sending a message.
 
 //command line interface
-// prompt.start();
-// prompt.get(['material', 'file', 'membership'], function(err, result){
-//     console.log(getCost(result.material, result.file, result.membership));
-// });
+prompt.start();
+prompt.get(['material', 'file', 'membership'], function(err, result){
+    console.log(LC.getCost(result.material, result.file, result.membership));
+});
 
 var LC = {
     //costs calculations
@@ -24,10 +24,12 @@ var LC = {
             time: 0,
             money: 0,
             pathLength: data.total,     //calculates costs of all colours for now
-            jogLength: data.jogLength
+            jogLengthX: data.jogLengthX,
+            jogLengthY: data.jogLengthY
         };
         cost.time += cost.pathLength / (MLV.laserSpeed.maxCutSpeed * MLV.materials[material].speed / 100);
-        cost.time += cost.jogLength / MLV.laserSpeed.maxJogSpeed;
+        cost.time += cost.jogLengthX / MLV.laserSpeed.maxJogSpeedX;
+        cost.time += cost.jogLengthY / MLV.laserSpeed.maxJogSpeedY;
         cost.time = cost.time / 60; //convert from seconds to minutes
         cost.money = cost.time * MLV.cost[membership];
         return cost;
@@ -43,7 +45,7 @@ var LC = {
         var startX = 0;
         var startY = 0;
         var jog = {x: 0, y: 0 };
-        var map = {jogLength: 0, total:0};
+        var map = {jogLengthX: 0, jogLengthY:0, total:0};
         var data = fs.readFileSync(__dirname + '/..' + string, 'utf8');
 
         while(data.indexOf('xmlns') !== -1){
@@ -97,7 +99,8 @@ var LC = {
             var height = LC.toInches(xpath.select('/svg/@height', doc)[0].nodeValue);
             if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0 && info.largeX <= width && info.largeY <= height){ //opacity and in-bounds check
                 if(i != 0){
-                    map.jogLength += LC.getLineLength([jog.x, info.startX], [jog.y, info.startY]);
+                    map.jogLengthX += LC.getLineLength([jog.x, info.startX], [jog.y, jog.y]);
+                    map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, info.startY]);
                 }
                 else{
                     startX = info.startX;
@@ -108,7 +111,8 @@ var LC = {
                 if(map[colour] !== undefined){
                     map[colour] += info.length;
                     map.total += info.length;
-                    map.jogLength += info.jogLength;
+                    map.jogLengthX += info.jogLengthX;
+                    map.jogLengthY += info.jogLengthY;
                     smallX = Math.min(smallX, info.smallX);
                     smallY = Math.min(smallY, info.smallY);
                     largeX = Math.max(largeX, info.largeX);
@@ -117,7 +121,8 @@ var LC = {
                 else{
                     map[colour] = info.length;
                     map.total += info.length;
-                    map.jogLength += info.jogLength;
+                    map.jogLengthX += info.jogLengthX;
+                    map.jogLengthY += info.jogLengthY;
                     smallX = Math.min(smallX, info.smallX);
                     smallY = Math.min(smallY, info.smallY);
                     largeX = Math.max(largeX, info.largeX);
@@ -125,8 +130,10 @@ var LC = {
                 }
             } 
         } 
-        map.jogLength += LC.getLineLength([jog.x, smallX], [jog.y, smallY]);
-        map.jogLength += LC.getLineLength([startX, smallX], [startY, smallY]);
+        map.jogLengthX += LC.getLineLength([jog.x, smallX], [jog.y, jog.y]);
+        map.jogLengthX += LC.getLineLength([startX, smallX], [startY, startY]);
+        map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, smallY]);
+        map.jogLengthY += LC.getLineLength([startX, startX], [startY, smallY]);
         map.xWidth = largeX - smallX;
         map.yLength = largeY - smallY;
         map.perimeter = map.xWidth * 2 + map.yLength * 2;
@@ -156,7 +163,8 @@ var LC = {
         };
         var arrayOfValues = svgparser(string);
         var length = 0;
-        var jogLength = 0;
+        var jogLengthX = 0;
+        var jogLengthY = 0;
 
         for(var i = 0; i < arrayOfValues.length; i++) {
             var temp = arrayOfValues[i];
@@ -164,7 +172,8 @@ var LC = {
                 case 'moveto':
                     if(temp.relative){
                         if(i !== 0){
-                            jogLength += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY])
+                            jogLengthX += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY]);
+                            jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + temp.y * transformY]);
                         }
                         else{
                             startX = temp.x * transformX;
@@ -178,7 +187,8 @@ var LC = {
                     }
                     else{
                         if(i !== 0){
-                            jogLength += LC.getLineLength([values.currentX, temp.x * transformX], [values.currentY, temp.y * transformY]);
+                            jogLengthX += LC.getLineLength([values.currentX, temp.x * transformX], [values.currentY, values.currentY]);
+                            jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, temp.y * transformY]);
                         }
                         else{
                             startX = temp.x * transformX;
@@ -194,7 +204,7 @@ var LC = {
 
                 case 'lineto':
                     if(temp.relative){
-                        length += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY])
+                        length += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY]);
                         values.currentX += temp.x * transformX;
                         values.currentY += temp.y * transformY;
                         LC.compareLineValues(values);
@@ -209,7 +219,7 @@ var LC = {
 
                 case 'horizontal lineto':
                     if(temp.relative){
-                        length += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY])
+                        length += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY]);
                         values.currentX += temp.x * transformX;
                         LC.compareLineValues(values);
                     }
@@ -222,7 +232,7 @@ var LC = {
 
                 case 'vertical lineto':
                     if(temp.relative){
-                        length += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + temp.y * transformY])
+                        length += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + temp.y * transformY]);
                         values.currentY += temp.y * transformY;
                         LC.compareLineValues(values);
                     }
@@ -431,8 +441,10 @@ var LC = {
         var info = {};
         var PIXELS_PER_INCH = 90; //dividng by 90 to convert pixels into inches
         info.length = length/PIXELS_PER_INCH * passes;
-        info.jogLength = jogLength/PIXELS_PER_INCH * passes;
-        info.jogLength += LC.getLineLength([values.currentX, values.closeX], [values.currentY, values.closeY]) * (passes - 1) / 90;
+        info.jogLengthX = jogLengthX/PIXELS_PER_INCH * passes;
+        info.jogLengthX += LC.getLineLength([values.currentX, values.closeX], [values.currentY, values.currentY]) * (passes - 1) / 90;
+        info.jogLengthY = jogLengthY/PIXELS_PER_INCH * passes;
+        info.jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.closeY]) * (passes - 1) / 90;
         info.smallX = values.smallX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
         info.smallY = values.smallY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
         info.largeX = values.largeX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
@@ -511,5 +523,6 @@ var LC = {
 }
 
 //console.log(LC.getFilePathLength("/test/test_files/colours.svg", 2));
+
 //make functions available for testing
 module.exports = LC;
