@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html>
+<script type="text/javascript" src="http://gabelerner.github.io/canvg/rgbcolor.js"></script> 
+<script type="text/javascript" src="http://gabelerner.github.io/canvg/StackBlur.js"></script>
+<script type="text/javascript" src="http://gabelerner.github.io/canvg/canvg.js"></script> 
   <head>
     <title><%= title %></title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
@@ -10,9 +13,44 @@
     <p>Material used: <%= material %></p>
     <p>Membership: <%= membership %></p>
     <p>Total path length: <%= pathLength %> inches</p>
-    <p>Total jog length: <%= jogLength %> inches</p>
+    <p>Total jog length in X axis: <%= jogLengthX %> inches</p>
+    <p>Total jog length in Y axis: <%= jogLengthY %> inches</p>
     <h3>Total time: <%= time %> minutes</h3>
     <h3>Total cost: $<%= cost %></h3>
+    <canvas id="canvas" width="600px" height="600px"></canvas> 
+    <script type="text/javascript">
+      window.onload = function() {
+        canvg('canvas', '<%= filename %>');
+      }
+      var rasterlength = 0;
+      var canvas = document.getElementById('canvas');
+      var ctx = canvas.getContext('2d');
+      var PIXELS_PER_INCH = 90;
 
+      for(var y = 1; y < canvas.height; y++){
+        var leftMostPixel = canvas.width;
+        var rightMostPixel = 1;
+        for(var x = 1; x < canvas.width; x++){
+          var pixel = ctx.getImageData(x,y,1,1);
+          var data = pixel.data;
+          if(isColoured(data)){
+            leftMostPixel = Math.min(x, leftMostPixel);
+            rightMostPixel = Math.max(x, rightMostPixel);
+          }
+        }
+        if (rightMostPixel > leftMostPixel){
+          rasterLength += rightMostPixel - leftMostPixel;
+        }
+      }
+      rasterLength = rasterLength / PIXELS_PER_INCH;
+      function isColoured(data){
+        if(data[0] !== 255 && data[1] !== 255 && data[2] !== 255 && data[3] !== 0){
+          return true;
+        }
+        else{
+          return false;
+        }
+      }
+    </script>
   </body>
 </html>

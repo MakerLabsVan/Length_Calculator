@@ -5,7 +5,7 @@ General
 -------
 The purpose of this project is to provide an estimate of the total length of all visible vector lines in an SVG file. Those results will in turn be used to estimate the total machine time for 2D profiles.
 
-Input: SVG file, material, and membership status
+Input: material, SVG filepath, and membership status
 
 Output: length of each set of line colors in inches, jog length, cost, and time
 
@@ -43,7 +43,7 @@ To launch app:
 
 4. Input material
 
-5. Input filepath _inside_ project folder (e.g. If SVG is inside "project folder location"/uploads, type in `/uploads/"SVG file name".svg`). _Do not input full file path._
+5. Input filepath _inside_ project folder (e.g. If SVG is inside "project folder location"/uploads, type in `/uploads/"SVG file name".svg`). _Do not input full filepath._
 
 6. Input membership status
 
@@ -63,11 +63,11 @@ Launch Server:
 >
 > $ `npm start`
 
-To view website, type localhost:3000 in URL
+To view website, type `localhost:3000` in URL
 
 History
 -------
-* Jeremy H's 2015 summer internship project at MakerLabs
+* Jeremy Ho's 2015 summer internship project at MakerLabs
 
 License
 -------

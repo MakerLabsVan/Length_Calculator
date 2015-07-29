@@ -38,6 +38,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(multer({storage: storage, fileSize: 50000000}).single('userImage'));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'uploads')));
 
 app.use('/', routes);
 app.use('/about', about);

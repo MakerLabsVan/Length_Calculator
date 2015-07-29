@@ -2,7 +2,7 @@
 var bezier = require('bezier-js');  //from https://github.com/Pomax/bezierjs
 var fs = require('fs');                     
 var svgparser = require('svg-path-parser');    //from https://github.com/hughsk/svg-path-parser
-var SVGCurveLib = require('/Users/Jeremy/node_modules/svg-curve-lib/src/js/svg-curve-lib.js');  //from https://github.com/MadLittleMods/svg-curve-lib
+var SVGCurveLib = require(__dirname + '/svg_curve_lib.js');  //from https://github.com/MadLittleMods/svg-curve-lib
 var xpath = require('xpath');
 var dom = require('xmldom').DOMParser;
 var materials_data = require(__dirname + '/../materials_data/materials_data.js');
@@ -18,26 +18,40 @@ prompt.get(['material', 'file', 'membership'], function(err, result){
 
 var LC = {
     //costs calculations
-    getCost: function(material, file, membership){
-        var data = LC.getFilePathLength(file, MLV.materials[material].passes);
-        var cost = {
-            time: 0,
-            money: 0,
-            pathLength: data.total,     //calculates costs of all colours for now
-            jogLengthX: data.jogLengthX,
-            jogLengthY: data.jogLengthY
-        };
-        cost.time += cost.pathLength / (MLV.laserSpeed.maxCutSpeed * MLV.materials[material].speed / 100);
-        cost.time += cost.jogLengthX / MLV.laserSpeed.maxJogSpeedX;
-        cost.time += cost.jogLengthY / MLV.laserSpeed.maxJogSpeedY;
-        cost.time = cost.time / 60; //convert from seconds to minutes
-        cost.money = cost.time * MLV.cost[membership];
-        return cost;
+    getCost: function(material, file, membership, mode, resolution){
+        var mode = mode || "vector";
+        var resolution = resolution || 252
+        if (mode === "vector"){
+            var data = LC.getFilePathLength(file, MLV.materials[material].passes);
+            var cost = {
+                pathLength: data.total,     //calculates costs of all colours for now
+                jogLengthX: data.jogLengthX,
+                jogLengthY: data.jogLengthY
+            };
+            cost.time = cost.pathLength / (MLV.laserSpeed.maxCutSpeed * MLV.materials[material].speed / 100);
+            cost.time += cost.jogLengthX / MLV.laserSpeed.maxJogSpeedX;
+            cost.time += cost.jogLengthY / MLV.laserSpeed.maxJogSpeedY;
+            cost.time = cost.time / 60; //convert from seconds to minutes
+            cost.money = cost.time * MLV.cost[membership];
+            return cost;
+        }
+        else{
+            var data = LC.getFilePathLength(file);
+            var cost = {
+                xWidth: data.xWidth,
+                yLength: data.yLength
+            };
+            cost.time = cost.xWidth / MLV.laserSpeed.maxRasterSpeed;
+            cost.time = cost.time * cost.yLength * resolution;
+            cost.time = cost.time / 60;
+            cost.money = cost.time * MLV.cost[membership];
+            return cost;
+        }
     },
 
     //get path length of file
     getFilePathLength: function(string, passes){
-        var passes = passes;
+        var passes = passes || 1;
         var smallX = Number.MAX_VALUE;
         var smallY = Number.MAX_VALUE;
         var largeX = -Number.MAX_VALUE;
