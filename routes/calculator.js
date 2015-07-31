@@ -19,18 +19,34 @@ router.post("/upload", function(req, res, next){
 			if(exists) { 
 				var location = '/' + req.file.path;
 				var filename = '/' + req.file.filename;
-				var data = length_calculator.getCost(req.body.material, location, req.body.membership);
-				res.render('data', {
-					title: 'Results',
-					material: req.body.material,
-					membership: req.body.membership,
-					pathLength: data.pathLength.toFixed(2),
-					jogLengthX: data.jogLengthX.toFixed(2),
-					jogLengthY: data.jogLengthY.toFixed(2),
-					time: data.time.toFixed(2),
-					cost: data.money.toFixed(2),
-					filename: filename
-				}); 
+				if(req.body.mode === 'vector'){
+					var data = length_calculator.getVectorCost(req.body.material, location, req.body.membership);
+					res.render('vector_data', {
+						title: 'Results',
+						material: req.body.material,
+						membership: req.body.membership,
+						pathLength: data.pathLength.toFixed(2),
+						jogLengthX: data.jogLengthX.toFixed(2),
+						jogLengthY: data.jogLengthY.toFixed(2),
+						time: data.time.toFixed(2),
+						cost: data.money.toFixed(2),
+						filename: filename
+					}); 
+				}
+				else if(req.body.mode === 'raster'){
+					var data = length_calculator.getRasterCost(location, req.body.membership, req.body.resolution);
+					res.render('raster_data', {
+						title: 'Results',
+						membership: req.body.membership,
+						naiveTime: data.time.toFixed(2),
+						naiveCost: data.money.toFixed(2),
+						resolution: req.body.resolution,
+						speed: data.speed,
+						rate: data.rate,
+						filename: filename,
+						height: data.yLength
+					}); 
+				}
 			} else { 
 				res.end("Error. File not found."); 
 			} 

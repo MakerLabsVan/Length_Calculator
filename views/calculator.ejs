@@ -11,7 +11,7 @@
      enctype   =  "multipart/form-data"
      action    =  "/calculator/upload"
      method    =  "post"
-	>
+	  >
 		<h3 style="font-family:verdana"> 1. Select Membership:</h3>
 		<select name="membership">
     		<option value="diyMember">DIY - MakerLabs Member</option>
@@ -20,14 +20,27 @@
         	<option value="fullServiceRush">Full service - rush</option>
     	</select><br>
 
-		<h3 style="font-family:verdana">2. Select Material:</h3>
-		<select name="material">
-    		<option value="paper">Paper</option>
-        	<option value="balticBirch_3mm">Baltic Birch - 3mm</option>
-        	<option value="acryllicClear_6mm">Clear Acryllic - 6mm</option>
-   		</select><br>
+    <h3 style="font-family:verdana">2. Select Mode:</h3>
+    <select name="mode">
+        <option value="vector">Vector Cutting</option>
+        <option value="raster">Raster Scanning</option>
+    </select><br>
 
-		<h3 style="font-family:verdana">3. Upload svg file:</h3>
+    <h3 style="font-family:verdana">3a. Select Material: (Only for Vector mode)</h3>
+    <select name="material">
+        <option value="paper">Paper</option>
+          <option value="balticBirch_3mm">Baltic Birch - 3mm</option>
+          <option value="acryllicClear_6mm">Clear Acryllic - 6mm</option>
+    </select><br>
+
+    <h3 style="font-family:verdana">3b. Select Resolution: (Only for Raster mode)</h3>
+    <select name="resolution">
+        <option value="252">250 passes per vertical inch</option> <!--actual value is 252-->
+        <option value="512">500 passes per vertical inch</option> <!--actual value is 512-->
+        <option value="1024">1000 passes per vertical inch</option> <!--actual value is 1024-->
+    </select><br>
+
+		<h3 style="font-family:verdana">4. Upload svg file:</h3>
 		<input type="file" name="userImage" />
 		<input type="submit" value="Calculate Cost" name="submit">
 	</form>

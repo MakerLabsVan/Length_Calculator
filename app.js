@@ -39,6 +39,7 @@ app.use(multer({storage: storage, fileSize: 50000000}).single('userImage'));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(path.join(__dirname, 'helper_methods')));
 
 app.use('/', routes);
 app.use('/about', about);

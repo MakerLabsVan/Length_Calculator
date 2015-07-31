@@ -12,45 +12,59 @@ var prompt = require('prompt');
 
 //command line interface
 prompt.start();
-prompt.get(['material', 'file', 'membership'], function(err, result){
-    console.log(LC.getCost(result.material, result.file, result.membership));
-});
+prompt.get(['mode'], function(err, res){
+    if (res.mode === 'vector'){
+        prompt.get(['material', 'file', 'membership'], function(err, result){
+            console.log(LC.getVectorCost(result.material, result.file, result.membership));
+        });
+    }
+    else if (res.mode === 'raster'){
+        prompt.get(['file', 'membership', 'resolution'], function(err, result){
+            console.log(LC.getRasterCost(result.file, result.membership, result.resolution));
+        });
+    }
+    else{
+        console.log("Error. Please type either vector or raster to select mode.");
+    }
+})
+
 
 var LC = {
     //costs calculations
-    getCost: function(material, file, membership, mode, resolution){
-        var mode = mode || "vector";
+    getVectorCost: function(material, file, membership){
+        var data = LC.getFilePathLength(file, MLV.materials[material].passes);
+        var cost = {
+            pathLength: data.total,     //calculates costs of all colours for now
+            jogLengthX: data.jogLengthX,
+            jogLengthY: data.jogLengthY
+        };
+        cost.time = cost.pathLength / (MLV.laserSpeed.maxCutSpeed * MLV.materials[material].speed / 100);
+        cost.time += cost.jogLengthX / MLV.laserSpeed.maxJogSpeedX;
+        cost.time += cost.jogLengthY / MLV.laserSpeed.maxJogSpeedY;
+        cost.time = cost.time / 60; //convert from seconds to minutes
+        cost.money = cost.time * MLV.cost[membership];
+        return cost;
+    },
+
+    getRasterCost: function(file, membership, resolution){ //resolution is either 252, 512, or 1024
         var resolution = resolution || 252
-        if (mode === "vector"){
-            var data = LC.getFilePathLength(file, MLV.materials[material].passes);
-            var cost = {
-                pathLength: data.total,     //calculates costs of all colours for now
-                jogLengthX: data.jogLengthX,
-                jogLengthY: data.jogLengthY
-            };
-            cost.time = cost.pathLength / (MLV.laserSpeed.maxCutSpeed * MLV.materials[material].speed / 100);
-            cost.time += cost.jogLengthX / MLV.laserSpeed.maxJogSpeedX;
-            cost.time += cost.jogLengthY / MLV.laserSpeed.maxJogSpeedY;
-            cost.time = cost.time / 60; //convert from seconds to minutes
-            cost.money = cost.time * MLV.cost[membership];
-            return cost;
-        }
-        else{
-            var data = LC.getFilePathLength(file);
-            var cost = {
-                xWidth: data.xWidth,
-                yLength: data.yLength
-            };
-            cost.time = cost.xWidth / MLV.laserSpeed.maxRasterSpeed;
-            cost.time = cost.time * cost.yLength * resolution;
-            cost.time = cost.time / 60;
-            cost.money = cost.time * MLV.cost[membership];
-            return cost;
-        }
+        var data = LC.getFilePathLength(file);
+        var cost = {
+            xWidth: data.xWidth,
+            yLength: data.yLength,
+            speed: MLV.laserSpeed.maxRasterSpeed,
+            rate: MLV.cost[membership]
+        };
+        console.log(cost);
+        cost.time = cost.xWidth / MLV.laserSpeed.maxRasterSpeed;
+        cost.time = cost.time * cost.yLength * resolution;
+        cost.time = cost.time / 60; //convert from seconds to minutes
+        cost.money = cost.time * MLV.cost[membership];
+        return cost;
     },
 
     //get path length of file
-    getFilePathLength: function(string, passes){
+    getFilePathLength: function(file, passes){
         var passes = passes || 1;
         var smallX = Number.MAX_VALUE;
         var smallY = Number.MAX_VALUE;
@@ -60,7 +74,7 @@ var LC = {
         var startY = 0;
         var jog = {x: 0, y: 0 };
         var map = {jogLengthX: 0, jogLengthY:0, total:0};
-        var data = fs.readFileSync(__dirname + '/..' + string, 'utf8');
+        var data = fs.readFileSync(__dirname + '/..' + file, 'utf8');
 
         while(data.indexOf('xmlns') !== -1){
             var start = data.indexOf('xmlns');
@@ -70,9 +84,19 @@ var LC = {
 
         var doc = new dom().parseFromString(data);      //parse String into data structure
         var array = xpath.select('//path[@style]', doc);    //find all path nodes with style attribute
+        var width = LC.toInches(xpath.select('/svg/@width', doc)[0].nodeValue);
+        var height = LC.toInches(xpath.select('/svg/@height', doc)[0].nodeValue);
+        var viewBox = {data: xpath.select('/svg/@viewBox', doc)[0]};
+        if(viewBox.data !== undefined){
+            viewBox.data = viewBox.data.nodeValue;
+            viewBox.sy = viewBox.data.substring(viewBox.data.lastIndexOf(' ') + 1);
+            var tempString = viewBox.data.substring(0, viewBox.data.lastIndexOf(' '));
+            viewBox.sx = tempString.substring(tempString.lastIndexOf(' ') + 1);
+        }
+
         for(var i = 0; i < array.length; i++){
             var path = xpath.select('./@style', array[i]);
-            var transform = xpath.select('ancestor::*/@transform', array[i]);
+            var transform = xpath.select('ancestor::*/@transform', array[i]); //group transformations
             var transformX = 1;
             var transformY = 1;
             var translateX = 0;
@@ -102,16 +126,46 @@ var LC = {
                 }
             }
 
+            var individualTransform = xpath.select('./@transform', array[i])[0]; //take into account individual path transform attributes. bugs with chaining transformations
+            if(individualTransform !== undefined){
+                var temp = individualTransform.nodeValue;
+                    if (temp.indexOf('matrix') !== -1){
+                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
+                        var startingIndex = temp.indexOf(',', temp.indexOf(',', temp.indexOf(',') + 1) + 1) + 1;
+                        transformY *= temp.substring(startingIndex, temp.indexOf(',', startingIndex));
+                        translateX += parseFloat(temp.substring(temp.lastIndexOf(',', temp.lastIndexOf(',') - 1) + 1, temp.lastIndexOf(',')));
+                        translateY += parseFloat(temp.substring(temp.lastIndexOf(',') + 1, temp.indexOf(')')));
+                    }
+                    else if(temp.indexOf('scale') !== -1 && temp.indexOf(',') !== -1){
+                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
+                        transformY *= temp.substring(temp.indexOf(',')+1, temp.indexOf(')'));
+                    }
+                    else if(temp.indexOf('scale') !== -1){
+                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(')'));
+                        transformY *= 1;
+                    }
+                    else if(temp.indexOf('translate') !== -1){
+                        translateX += parseFloat(temp.substring(temp.indexOf('(')+1, temp.indexOf(',')));
+                        translateY += parseFloat(temp.substring(temp.indexOf(',')+1, temp.indexOf(')')));
+                    }
+            }
+
+            if (viewBox.data !== undefined){
+                var viewBoxScale = Math.min((width * 90) / viewBox.sx, (height * 90) / viewBox.sy);  //convert dimensions from inches to pixels, and scale coordinates to satisfy viewBox
+                transformX = transformX * viewBoxScale;
+                transformY = transformY * viewBoxScale;
+            }
+
             var style_array = path[0].nodeValue.split(';');
             var style = {};     //create object containing style attributes
             for(var l = 0; l < style_array.length; l++){
                 style[style_array[l].substring(0,style_array[l].indexOf(":"))] = style_array[l].substring(style_array[l].indexOf(":")+1);
             }
             var colour = style.stroke;
+
             var info = LC.getLength(xpath.select('./@d', array[i])[0].nodeValue, transformX, transformY, translateX, translateY, passes);
-            var width = LC.toInches(xpath.select('/svg/@width', doc)[0].nodeValue);
-            var height = LC.toInches(xpath.select('/svg/@height', doc)[0].nodeValue);
-            if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0 && info.largeX <= width && info.largeY <= height){ //opacity and in-bounds check
+            
+            if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0 && info.largeX <= width && info.largeY <= height){ //opacity check. Out of bounds check usually screws up due to multiple translations, which is why I removed it
                 if(i != 0){
                     map.jogLengthX += LC.getLineLength([jog.x, info.startX], [jog.y, jog.y]);
                     map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, info.startY]);
@@ -143,7 +197,7 @@ var LC = {
                     largeY = Math.max(largeY, info.largeY);
                 }
             } 
-        } 
+        }
         map.jogLengthX += LC.getLineLength([jog.x, smallX], [jog.y, jog.y]);
         map.jogLengthX += LC.getLineLength([startX, smallX], [startY, startY]);
         map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, smallY]);
@@ -536,7 +590,7 @@ var LC = {
         
 }
 
-//console.log(LC.getFilePathLength("/test/test_files/colours.svg", 2));
+//console.log(LC.getFilePathLength("/test/test_files/1.svg", 1));
 
 //make functions available for testing
 module.exports = LC;
