@@ -56,7 +56,7 @@ Run Tests
 > $ `mocha`
 
 Test Website
------------
+------------
 Launch Server:
 
 > $ `cd "project folder location"`
@@ -64,6 +64,10 @@ Launch Server:
 > $ `npm start`
 
 To view website, type `localhost:3000` in URL
+
+Settings Config
+---------------
+Configuration file is located at "project folder location"/materials_data/materials_data.js. You can change laser speeds, edit material profiles (material specific settings for cutting speed, power, number of passes etc.), and membership rates.
 
 History
 -------
