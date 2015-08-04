@@ -7,6 +7,7 @@ var xpath = require('xpath');
 var dom = require('xmldom').DOMParser;
 var materials_data = require(__dirname + '/../materials_data/materials_data.js');
 var prompt = require('prompt');
+var math = require('mathjs');
 
 //Its not about the length or cleanliness of the code. Its about sending a message.
 
@@ -102,63 +103,69 @@ var LC = {
         for(var i = 0; i < array.length; i++){
             var path = xpath.select('./@style', array[i]);
             var transform = xpath.select('ancestor::*/@transform', array[i]); //group transformations
-            var transformX = 1;
-            var transformY = 1;
-            var translateX = 0;
-            var translateY = 0;
+            var transmat = math.matrix([[1,0,0],[0,1,0],[0,0,1]]);    //transformation matrix
+
             for (var k = 0; k < transform.length; k++){     //take into account transformations
                 if(transform[k] !== undefined){
                     var temp = transform[k].nodeValue;
+                    var scaleX = 1;
+                    var scaleY = 1;
+                    var translateX = 0;
+                    var translateY = 0;
                     if (temp.indexOf('matrix') !== -1){
-                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
+                        scaleX = temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
                         var startingIndex = temp.indexOf(',', temp.indexOf(',', temp.indexOf(',') + 1) + 1) + 1;
-                        transformY *= temp.substring(startingIndex, temp.indexOf(',', startingIndex));
-                        translateX += parseFloat(temp.substring(temp.lastIndexOf(',', temp.lastIndexOf(',') - 1) + 1, temp.lastIndexOf(',')));
-                        translateY += parseFloat(temp.substring(temp.lastIndexOf(',') + 1, temp.indexOf(')')));
+                        scaleY = temp.substring(startingIndex, temp.indexOf(',', startingIndex));
+                        translateX = parseFloat(temp.substring(temp.lastIndexOf(',', temp.lastIndexOf(',') - 1) + 1, temp.lastIndexOf(',')));
+                        translateY = parseFloat(temp.substring(temp.lastIndexOf(',') + 1, temp.indexOf(')')));
                     }
                     else if(temp.indexOf('scale') !== -1 && temp.indexOf(',') !== -1){
-                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
-                        transformY *= temp.substring(temp.indexOf(',')+1, temp.indexOf(')'));
+                        scaleX = temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
+                        scaleY = temp.substring(temp.indexOf(',')+1, temp.indexOf(')'));
                     }
                     else if(temp.indexOf('scale') !== -1){
-                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(')'));
-                        transformY *= 1;
+                        scaleX = temp.substring(temp.indexOf('(')+1, temp.indexOf(')'));
+                        scaleY = 1;
                     }
                     else if(temp.indexOf('translate') !== -1){
-                        translateX += parseFloat(temp.substring(temp.indexOf('(')+1, temp.indexOf(',')));
-                        translateY += parseFloat(temp.substring(temp.indexOf(',')+1, temp.indexOf(')')));
+                        translateX = parseFloat(temp.substring(temp.indexOf('(')+1, temp.indexOf(',')));
+                        translateY = parseFloat(temp.substring(temp.indexOf(',')+1, temp.indexOf(')')));
                     }
+                    var tempmat = math.matrix([[scaleX, 0, translateX], [0, scaleY, translateY], [0, 0, 1]])
+                    transmat = math.multiply(transmat, tempmat);
                 }
             }
 
             var individualTransform = xpath.select('./@transform', array[i])[0]; //take into account individual path transform attributes. bugs with chaining transformations
             if(individualTransform !== undefined){
                 var temp = individualTransform.nodeValue;
-                    if (temp.indexOf('matrix') !== -1){
-                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
-                        var startingIndex = temp.indexOf(',', temp.indexOf(',', temp.indexOf(',') + 1) + 1) + 1;
-                        transformY *= temp.substring(startingIndex, temp.indexOf(',', startingIndex));
-                        translateX += parseFloat(temp.substring(temp.lastIndexOf(',', temp.lastIndexOf(',') - 1) + 1, temp.lastIndexOf(',')));
-                        translateY += parseFloat(temp.substring(temp.lastIndexOf(',') + 1, temp.indexOf(')')));
-                    }
-                    else if(temp.indexOf('scale') !== -1 && temp.indexOf(',') !== -1){
-                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
-                        transformY *= temp.substring(temp.indexOf(',')+1, temp.indexOf(')'));
-                    }
-                    else if(temp.indexOf('scale') !== -1){
-                        transformX *= temp.substring(temp.indexOf('(')+1, temp.indexOf(')'));
-                        transformY *= 1;
-                    }
-                    else if(temp.indexOf('translate') !== -1){
-                        translateX += parseFloat(temp.substring(temp.indexOf('(')+1, temp.indexOf(',')));
-                        translateY += parseFloat(temp.substring(temp.indexOf(',')+1, temp.indexOf(')')));
-                    }
+                if (temp.indexOf('matrix') !== -1){
+                    scaleX = temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
+                    var startingIndex = temp.indexOf(',', temp.indexOf(',', temp.indexOf(',') + 1) + 1) + 1;
+                    scaleY = temp.substring(startingIndex, temp.indexOf(',', startingIndex));
+                    translateX = parseFloat(temp.substring(temp.lastIndexOf(',', temp.lastIndexOf(',') - 1) + 1, temp.lastIndexOf(',')));
+                    translateY = parseFloat(temp.substring(temp.lastIndexOf(',') + 1, temp.indexOf(')')));
+                }
+                else if(temp.indexOf('scale') !== -1 && temp.indexOf(',') !== -1){
+                    scaleX = temp.substring(temp.indexOf('(')+1, temp.indexOf(','));
+                    scaleY = temp.substring(temp.indexOf(',')+1, temp.indexOf(')'));
+                }
+                else if(temp.indexOf('scale') !== -1){
+                    scaleX = temp.substring(temp.indexOf('(')+1, temp.indexOf(')'));
+                    scaleY = 1;
+                }
+                else if(temp.indexOf('translate') !== -1){
+                    translateX = parseFloat(temp.substring(temp.indexOf('(')+1, temp.indexOf(',')));
+                    translateY = parseFloat(temp.substring(temp.indexOf(',')+1, temp.indexOf(')')));
+                }
+                var tempmat = math.matrix([[scaleX, 0, translateX], [0, scaleY, translateY], [0, 0, 1]]);
+                transmat = math.multiply(transmat, tempmat);
             }
 
             if (viewBox.data !== undefined){
                 var viewBoxScale = Math.min((width * 90) / viewBox.sx, (height * 90) / viewBox.sy);  //convert dimensions from inches to pixels, and scale coordinates to satisfy viewBox
-                transformX = transformX * viewBoxScale;
-                transformY = transformY * viewBoxScale;
+                var tempmat = math.matrix([[viewBoxScale, 0, 0], [0, viewBoxScale, 0], [0, 0, 1]])
+                transmat = math.multiply(transmat, tempmat);
             }
 
             var style_array = path[0].nodeValue.split(';');
@@ -167,8 +174,7 @@ var LC = {
                 style[style_array[l].substring(0,style_array[l].indexOf(":"))] = style_array[l].substring(style_array[l].indexOf(":")+1);
             }
             var colour = style.stroke;
-
-            var info = LC.getLength(xpath.select('./@d', array[i])[0].nodeValue, transformX, transformY, translateX, translateY, passes);
+            var info = LC.getLength(xpath.select('./@d', array[i])[0].nodeValue, transmat, passes);
             
             if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0 && info.largeX <= width && info.largeY <= height){ //opacity check. Out of bounds check usually screws up due to multiple translations, which is why I removed it
                 if(i != 0){
@@ -220,12 +226,9 @@ var LC = {
     },
 
     //Calculates length from path data using helper methods
-    getLength: function(string, transform_X, transform_Y, translate_X, translate_Y, passes){
+    getLength: function(string, transformation_matrix, passes){
         var passes = passes || 1;
-        var transformX = transform_X || 1;
-        var transformY = transform_Y || 1;
-        var translateX = translate_X || 0;
-        var translateY = translate_Y || 0;
+        var transmat = transformation_matrix;
         var startX = 0;
         var startY = 0;
         var values = {
@@ -240,86 +243,98 @@ var LC = {
             smoothX: 0, //for shorthand curve calculations
             smoothY: 0
         };
-        var arrayOfValues = svgparser(string);
+        var arrayOfCommands = svgparser(string);
         var length = 0;
         var jogLengthX = 0;
         var jogLengthY = 0;
 
-        for(var i = 0; i < arrayOfValues.length; i++) {
-            var temp = arrayOfValues[i];
+        for(var i = 0; i < arrayOfCommands.length; i++) {
+            var temp = arrayOfCommands[i];
+            if(temp.x !== undefined){
+                var point = LC.transform(temp.x, temp.y, transmat); //end point
+            }
+            if(temp.x1 !== undefined){
+                var point1 = LC.transform(temp.x1, temp.y1, transmat); //control point 1
+            }
+            if(temp.x2 !== undefined){
+                var point2 = LC.transform(temp.x2, temp.y2, transmat); //control point 2
+            }
+            if(temp.rx !== undefined){
+                var pointr = LC.transform(temp.rx, temp.ry, transmat); //radius
+            }
             switch(temp.command){
                 case 'moveto':
                     if(temp.relative){
                         if(i !== 0){
-                            jogLengthX += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY]);
-                            jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + temp.y * transformY]);
-                            LC.addJogLine(values.currentX, values.currentY, values.currentX + temp.x * transformX, values.currentY + temp.y * transformY);
+                            jogLengthX += LC.getLineLength([values.currentX, values.currentX + point.x], [values.currentY, values.currentY]);
+                            jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + point.y]);
+                            LC.addJogLine(values.currentX, values.currentY, values.currentX + point.x, values.currentY + point.y);
                         }
                         else{
-                            startX = temp.x * transformX;
-                            startY = temp.y * transformY;
+                            startX = point.x;
+                            startY = point.y;
                         }
-                        values.currentX += temp.x * transformX;
-                        values.currentY += temp.y * transformY;
-                        values.closeX += temp.x * transformX;
-                        values.closeY += temp.y * transformY;
+                        values.currentX += point.x;
+                        values.currentY += point.y;
+                        values.closeX += point.x;
+                        values.closeY += point.y;
                         LC.compareLineValues(values);
                     }
                     else{
                         if(i !== 0){
-                            jogLengthX += LC.getLineLength([values.currentX, temp.x * transformX], [values.currentY, values.currentY]);
-                            jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, temp.y * transformY]);
-                            LC.addJogLine(values.currentX, values.currentY, temp.x * transformX, temp.y * transformY);
+                            jogLengthX += LC.getLineLength([values.currentX, point.x], [values.currentY, values.currentY]);
+                            jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, point.y]);
+                            LC.addJogLine(values.currentX, values.currentY, point.x, point.y);
                         }
                         else{
-                            startX = temp.x * transformX;
-                            startY = temp.y * transformY;
+                            startX = point.x;
+                            startY = point.y;
                         }
-                        values.currentX = temp.x * transformX;
-                        values.currentY = temp.y * transformY;
-                        values.closeX = temp.x * transformX;
-                        values.closeY = temp.y * transformY;
+                        values.currentX = point.x;
+                        values.currentY = point.y;
+                        values.closeX = point.x;
+                        values.closeY = point.y;
                         LC.compareLineValues(values);
                     }
                     break;
 
                 case 'lineto':
                     if(temp.relative){
-                        length += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY + temp.y * transformY]);
-                        values.currentX += temp.x * transformX;
-                        values.currentY += temp.y * transformY;
+                        length += LC.getLineLength([values.currentX, values.currentX + point.x], [values.currentY, values.currentY + point.y]);
+                        values.currentX += point.x;
+                        values.currentY += point.y;
                         LC.compareLineValues(values);
                     }
                     else{
-                        length += LC.getLineLength([values.currentX, temp.x * transformX], [values.currentY, temp.y * transformY]);
-                        values.currentX = temp.x * transformX;
-                        values.currentY = temp.y * transformY;
+                        length += LC.getLineLength([values.currentX, point.x], [values.currentY, point.y]);
+                        values.currentX = point.x;
+                        values.currentY = point.y;
                         LC.compareLineValues(values);
                     }
                     break;
 
                 case 'horizontal lineto':
                     if(temp.relative){
-                        length += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY]);
-                        values.currentX += temp.x * transformX;
+                        length += LC.getLineLength([values.currentX, values.currentX + point.x], [values.currentY, values.currentY]);
+                        values.currentX += point.x;
                         LC.compareLineValues(values);
                     }
                     else{
-                        length += LC.getLineLength([values.currentX, temp.x * transformX], [values.currentY, values.currentY]);
-                        values.currentX = temp.x * transformX;
+                        length += LC.getLineLength([values.currentX, point.x], [values.currentY, values.currentY]);
+                        values.currentX = point.x;
                         LC.compareLineValues(values);
                     }
                     break;
 
                 case 'vertical lineto':
                     if(temp.relative){
-                        length += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + temp.y * transformY]);
-                        values.currentY += temp.y * transformY;
+                        length += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + point.y]);
+                        values.currentY += point.y;
                         LC.compareLineValues(values);
                     }
                     else{
-                        length += LC.getLineLength([values.currentX, values.currentX], [values.currentY, temp.y * transformY]);
-                        values.currentY = temp.y * transformY;
+                        length += LC.getLineLength([values.currentX, values.currentX], [values.currentY, point.y]);
+                        values.currentY = point.y;
                         LC.compareLineValues(values);
                     }
                     break;
@@ -337,40 +352,40 @@ var LC = {
                             values.currentX,
                             values.currentY,
                             [
-                                values.currentX + temp.x1 * transformX,
-                                values.currentX + temp.x2 * transformX,
-                                values.currentX + temp.x * transformX
+                                values.currentX + point1.x,
+                                values.currentX + point2.x,
+                                values.currentX + point.x
                             ], [
-                                values.currentY + temp.y1 * transformY,
-                                values.currentY + temp.y2 * transformY,
-                                values.currentY + temp.y * transformY]
+                                values.currentY + point1.y,
+                                values.currentY + point2.y,
+                                values.currentY + point.y]
                         ];
                         length += LC.getCurve.apply(null, args).length();
                         LC.compareCurveValues(values,args);
-                        values.smoothX = values.currentX + temp.x2 * transformX;
-                        values.smoothY = values.currentY + temp.y2 * transformY;
-                        values.currentX += temp.x * transformX;
-                        values.currentY += temp.y * transformY;
+                        values.smoothX = values.currentX + point2.x;
+                        values.smoothY = values.currentY + point2.y;
+                        values.currentX += point.x;
+                        values.currentY += point.y;
                     }
                     else{
                         var args = [
                             values.currentX, 
                             values.currentY, 
                             [
-                                temp.x1 * transformX, 
-                                temp.x2 * transformX, 
-                                temp.x * transformX
+                                point1.x, 
+                                point2.x, 
+                                point.x
                             ], [
-                                temp.y1 * transformY, 
-                                temp.y2 * transformY, 
-                                temp.y * transformY]
+                                point1.y, 
+                                point2.y, 
+                                point.y]
                         ];
                         length += LC.getCurve.apply(null, args).length();
                         LC.compareCurveValues(values,args);
-                        values.currentX = temp.x * transformX;
-                        values.currentY = temp.y * transformY;
-                        values.smoothX = temp.x2 * transformX;
-                        values.smoothY = temp.y2 * transformY;
+                        values.currentX = point.x;
+                        values.currentY = point.y;
+                        values.smoothX = point2.x;
+                        values.smoothY = point2.y;
                     }
                     break;
 
@@ -381,18 +396,18 @@ var LC = {
                             values.currentY,
                             [
                                 values.currentX * 2 - values.smoothX,
-                                values.currentX + temp.x2 * transformX,
-                                values.currentX + temp.x * transformX
+                                values.currentX + point2.x,
+                                values.currentX + point.x
                             ], [
                                 values.currentY * 2 - values.smoothY,
-                                values.currentY + temp.y2 * transformY,
-                                values.currentY + temp.y * transformY
+                                values.currentY + point2.y,
+                                values.currentY + point.y
                             ]
                         ];
                         length += LC.getCurve.apply(null, args).length();
                         LC.compareCurveValues(values,args);
-                        values.currentX += temp.x * transformX;
-                        values.currentY += temp.y * transformY;
+                        values.currentX += point.x;
+                        values.currentY += point.y;
                     }
                     else{
                         var args = [
@@ -400,17 +415,17 @@ var LC = {
                             values.currentY,
                             [
                                 values.currentX * 2 - values.smoothX,
-                                temp.x2 * transformX,
-                                temp.x * transformX
+                                point2.x,
+                                point.x
                             ],[
                                 values.currentY * 2 - values.smoothY,
-                                temp.y2 * transformY, temp.y * transformY
+                                point2.y, point.y
                             ]
                         ];
                         length += LC.getCurve.apply(null, args).length();
                         LC.compareCurveValues(values,args);
-                        values.currentX = temp.x * transformX;
-                        values.currentY = temp.y * transformY;
+                        values.currentX = point.x;
+                        values.currentY = point.y;
                     }
                     break;
 
@@ -420,38 +435,38 @@ var LC = {
                             values.currentX,
                             values.currentY,
                             [
-                                values.currentX + temp.x1 * transformX,
-                                values.currentX + temp.x * transformX
+                                values.currentX + point1.x,
+                                values.currentX + point.x
                             ], [
-                                values.currentY + temp.y1 * transformY,
-                                values.currentY + temp.y * transformY
+                                values.currentY + point1.y,
+                                values.currentY + point.y
                             ]
                         ];
                         length += LC.getCurve.apply(null, args).length();
                         LC.compareCurveValues(values,args);
-                        values.smoothX = values.currentX + temp.x1 * transformX;
-                        values.smoothY = values.currentY + temp.y1 * transformY;
-                        values.currentX += temp.x * transformX;
-                        values.currentY += temp.y * transformY;
+                        values.smoothX = values.currentX + point1.x;
+                        values.smoothY = values.currentY + point1.y;
+                        values.currentX += point.x;
+                        values.currentY += point.y;
                     }
                     else{
                         var args = [
                             values.currentX,
                             values.currentY,
                             [
-                                temp.x1 * transformX,
-                                temp.x * transformX
+                                point1.x,
+                                point.x
                             ], [
-                                temp.y1 * transformY,
-                                temp.y * transformY
+                                point1.y,
+                                point.y
                             ]
                         ];
                         length += LC.getCurve.apply(null, args).length();
                         LC.compareCurveValues(values,args);
-                        values.currentX = temp.x * transformX;
-                        values.currentY = temp.y * transformY;
-                        values.smoothX = temp.x1 * transformX;
-                        values.smoothY = temp.y1 * transformY;
+                        values.currentX = point.x;
+                        values.currentY = point.y;
+                        values.smoothX = point1.x;
+                        values.smoothY = point1.y;
                     }
                     break;
 
@@ -462,16 +477,16 @@ var LC = {
                             values.currentY,
                             [
                                 values.currentX * 2 - values.smoothX,
-                                values.currentX + temp.x * transformX
+                                values.currentX + point.x
                             ], [
                                 values.currentY * 2 - values.smoothY,
-                                values.currentY + temp.y * transformY
+                                values.currentY + point.y
                             ]
                         ];
                         length += LC.getCurve.apply(null, args).length();
                         LC.compareCurveValues(values,args);
-                        values.currentX += temp.x * transformX;
-                        values.currentY += temp.y * transformY;
+                        values.currentX += point.x;
+                        values.currentY += point.y;
                     }
                     else{
                         var args = [
@@ -479,39 +494,39 @@ var LC = {
                             values.currentY,
                             [
                                 values.currentX * 2 - values.smoothX,
-                                temp.x * transformX
+                                point.x
                             ], [
                                 values.currentY * 2 - values.smoothY,
-                                temp.y * transformY
+                                point.y
                             ]
                         ];
                         length += LC.getCurve.apply(null, args).length();
                         LC.compareCurveValues(values,args);
-                        values.currentX = temp.x * transformX;
-                        values.currentY = temp.y * transformY;
+                        values.currentX = point.x;
+                        values.currentY = point.y;
                     }
                     break;
 
                 case 'elliptical arc':
                     if(temp.relative){
                         var ellipticalArc = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
-                            var point = SVGCurveLib.pointOnEllipticalArc({x: values.currentX , y: values.currentY}, temp.rx * transformX, temp.ry * transformY, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: values.currentX + temp.x * transformX, y: values.currentY + temp.y * transformY}, t);
-                            LC.compareArcValues(values,point);
-                            return point;
+                            var pointOnArc = SVGCurveLib.pointOnEllipticalArc({x: values.currentX , y: values.currentY}, pointr.x, pointr.y, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: values.currentX + point.x, y: values.currentY + point.y}, t);
+                            LC.compareArcValues(values, pointOnArc);
+                            return pointOnArc;
                         });
                         length += ellipticalArc.arcLength;
-                        values.currentX += temp.x * transformX;
-                        values.currentY += temp.y * transformY;
+                        values.currentX += point.x;
+                        values.currentY += point.y;
                     }
                     else{
                         var ellipticalArc = SVGCurveLib.approximateArcLengthOfCurve(10000, function(t) {
-                            var point = SVGCurveLib.pointOnEllipticalArc({x: values.currentX , y: values.currentY}, temp.rx * transformX, temp.ry * transformY, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: temp.x * transformX, y: temp.y * transformY}, t);
-                            LC.compareArcValues(values,point);
-                            return point;
+                            var pointOnArc = SVGCurveLib.pointOnEllipticalArc({x: values.currentX , y: values.currentY}, pointr.x, pointr.y, temp.xAxisRotation, temp.largeArc, temp.sweep, {x: point.x, y: point.y}, t);
+                            LC.compareArcValues(values, pointOnArc);
+                            return pointOnArc;
                         });
                         length += ellipticalArc.arcLength;
-                        values.currentX = temp.x * transformX;
-                        values.currentY = temp.y * transformY;
+                        values.currentX = point.x;
+                        values.currentY = point.y;
                     }
                     break;
 
@@ -521,20 +536,31 @@ var LC = {
         }
         var info = {};
         var PIXELS_PER_INCH = 90; //dividng by 90 to convert pixels into inches
+        var xOffSet = transmat.get([0,2]) / PIXELS_PER_INCH;
+        var yOffSet = transmat.get([1,2]) / PIXELS_PER_INCH;
+
         info.length = length/PIXELS_PER_INCH * passes;
         info.jogLengthX = jogLengthX/PIXELS_PER_INCH * passes;
         info.jogLengthX += LC.getLineLength([values.currentX, values.closeX], [values.currentY, values.currentY]) * (passes - 1) / 90;
         info.jogLengthY = jogLengthY/PIXELS_PER_INCH * passes;
         info.jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.closeY]) * (passes - 1) / 90;
-        info.smallX = values.smallX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
-        info.smallY = values.smallY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
-        info.largeX = values.largeX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
-        info.largeY = values.largeY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
-        info.startX = startX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
-        info.startY = startY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
-        info.endX = values.currentX/PIXELS_PER_INCH + translateX/PIXELS_PER_INCH;
-        info.endY = values.currentY/PIXELS_PER_INCH + translateY/PIXELS_PER_INCH;
+        info.smallX = values.smallX/PIXELS_PER_INCH + xOffSet;
+        info.smallY = values.smallY/PIXELS_PER_INCH + yOffSet;
+        info.largeX = values.largeX/PIXELS_PER_INCH + xOffSet;
+        info.largeY = values.largeY/PIXELS_PER_INCH + yOffSet;
+        info.startX = startX/PIXELS_PER_INCH + xOffSet;
+        info.startY = startY/PIXELS_PER_INCH + yOffSet;
+        info.endX = values.currentX/PIXELS_PER_INCH + xOffSet;
+        info.endY = values.currentY/PIXELS_PER_INCH + yOffSet;
         return info;
+    },
+
+    //transforms coordinates with transformation matrix
+    transform: function(x, y, transformation_matrix){
+        var scaleX = transformation_matrix.get([0,0]);
+        var scaleY = transformation_matrix.get([1,1]);
+        var point = {x: x * scaleX, y: y * scaleY};
+        return point;
     },
 
     //calculates length of line given array of x,y coordinates
@@ -608,9 +634,7 @@ var LC = {
         
 }
 
-console.log(LC.getFilePathLength("/test/test_files/design1.svg", 1));
-
-console.log(LC.vis);
+//console.log(LC.getFilePathLength("/test/test_files/1.svg", 1));
 
 //make functions available for testing
 module.exports = LC;
