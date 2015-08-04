@@ -69,6 +69,22 @@ Settings Config
 ---------------
 Configuration file is located at "project folder location"/materials_data/materials_data.js. You can change laser speeds, edit material profiles (material specific settings for cutting speed, power, number of passes etc.), and membership rates.
 
+Code Organization
+-----------------
+All vector calculations are done in helper_methods/length_calculator.js
+
+Naive raster calculations are also done in length_calculator.js
+
+Optimized raster calculations are done client side, in views/raster_data.ejs
+
+Server code is in app.js
+
+Unit testing script is in test/test.js
+
+Page routing code is in routes folder
+
+Page views is in views folder
+
 History
 -------
 * Jeremy Ho's 2015 summer internship project at MakerLabs

@@ -44,7 +44,8 @@
         }
         rasterLength = rasterLength * (<%= resolution %> / 90) / 90;
         document.getElementById("rasterlength").innerHTML = 'Optimized raster length: ' + rasterLength.toFixed(2) + ' inches';
-        var time = (rasterLength / <%= speed %> / 60) + ACCELERATION_TIME_PER_INCH * <%= height %>
+        var time = (rasterLength / <%= speed %> / 60);
+        time = time + ACCELERATION_TIME_PER_INCH * <%= height %>;
         document.getElementById("time").innerHTML = 'Actual time: ' + time.toFixed(2) + ' minutes';
         var cost = time * <%= rate %>;
         if (cost > 15){
