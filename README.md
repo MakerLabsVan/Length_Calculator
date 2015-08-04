@@ -85,6 +85,10 @@ Page routing code is in routes folder
 
 Page views is in views folder
 
+To Do
+-----
+Add jog line visualization to webpage
+
 History
 -------
 * Jeremy Ho's 2015 summer internship project at MakerLabs
