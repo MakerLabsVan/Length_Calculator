@@ -10,7 +10,7 @@ var prompt = require('prompt');
 
 //Its not about the length or cleanliness of the code. Its about sending a message.
 
-//command line interface
+//command line interface using prompt.js
 prompt.start();
 prompt.get(['mode'], function(err, res){
     if (res.mode === 'vector'){
@@ -30,7 +30,10 @@ prompt.get(['mode'], function(err, res){
 
 
 var LC = {
-    //costs calculations
+
+    vis: "", //jog line visualization path data.
+
+    //cost calculations ignores clip paths. This means that the program may take into account invisible paths.
     getVectorCost: function(material, file, membership){
         var data = LC.getFilePathLength(file, MLV.materials[material].passes);
         var cost = {
@@ -47,7 +50,8 @@ var LC = {
     },
 
     getRasterCost: function(file, membership, resolution){ //resolution is either 252, 512, or 1024
-        var resolution = resolution || 252
+        var resolution = resolution || 252;
+        var ACCELERATION_TIME_PER_INCH = 0.63333; //in minutes
         var data = LC.getFilePathLength(file);
         var cost = {
             xWidth: data.xWidth,
@@ -59,6 +63,7 @@ var LC = {
         cost.time = cost.xWidth / MLV.laserSpeed.maxRasterSpeed;
         cost.time = cost.time * cost.yLength * resolution;
         cost.time = cost.time / 60; //convert from seconds to minutes
+        cost.time += ACCELERATION_TIME_PER_INCH * cost.yLength;
         cost.money = cost.time * MLV.cost[membership];
         return cost;
     },
@@ -169,6 +174,7 @@ var LC = {
                 if(i != 0){
                     map.jogLengthX += LC.getLineLength([jog.x, info.startX], [jog.y, jog.y]);
                     map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, info.startY]);
+                    LC.addJogLine(jog.x, jog.y, info.startX, info.startY);
                 }
                 else{
                     startX = info.startX;
@@ -199,9 +205,14 @@ var LC = {
             } 
         }
         map.jogLengthX += LC.getLineLength([jog.x, smallX], [jog.y, jog.y]);
-        map.jogLengthX += LC.getLineLength([startX, smallX], [startY, startY]);
         map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, smallY]);
+        LC.addJogLine(jog.x, jog.y, smallX, smallY);
+        map.jogLengthX += LC.getLineLength([startX, smallX], [startY, startY]);
         map.jogLengthY += LC.getLineLength([startX, startX], [startY, smallY]);
+        LC.addJogLine(startX, startY, smallX, smallY);
+
+
+        
         map.xWidth = largeX - smallX;
         map.yLength = largeY - smallY;
         map.perimeter = map.xWidth * 2 + map.yLength * 2;
@@ -242,6 +253,7 @@ var LC = {
                         if(i !== 0){
                             jogLengthX += LC.getLineLength([values.currentX, values.currentX + temp.x * transformX], [values.currentY, values.currentY]);
                             jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.currentY + temp.y * transformY]);
+                            LC.addJogLine(values.currentX, values.currentY, values.currentX + temp.x * transformX, values.currentY + temp.y * transformY);
                         }
                         else{
                             startX = temp.x * transformX;
@@ -257,6 +269,7 @@ var LC = {
                         if(i !== 0){
                             jogLengthX += LC.getLineLength([values.currentX, temp.x * transformX], [values.currentY, values.currentY]);
                             jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, temp.y * transformY]);
+                            LC.addJogLine(values.currentX, values.currentY, temp.x * transformX, temp.y * transformY);
                         }
                         else{
                             startX = temp.x * transformX;
@@ -586,11 +599,18 @@ var LC = {
         else{
             return parseFloat(string) / 90;
         }
+    },
+
+    //adds jogging lines to visualization
+    addJogLine: function(x1, y1, x2, y2){
+        LC.vis += "M " + x1 + " " + y1 + " L " + x2 + " " + y2 + " ";
     }
         
 }
 
-//console.log(LC.getFilePathLength("/test/test_files/1.svg", 1));
+console.log(LC.getFilePathLength("/test/test_files/design1.svg", 1));
+
+console.log(LC.vis);
 
 //make functions available for testing
 module.exports = LC;
