@@ -89,6 +89,8 @@ To Do
 -----
 Add jog line visualization to webpage
 
+Add automatic pdf conversion using poppler utils
+
 History
 -------
 * Jeremy Ho's 2015 summer internship project at MakerLabs

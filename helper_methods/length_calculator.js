@@ -32,7 +32,7 @@ prompt.get(['mode'], function(err, res){
 
 var LC = {
 
-    vis: "", //jog line visualization path data.
+    vis: [[],[],[],[]], //jog line visualization path data.
 
     //cost calculations ignores clip paths. This means that the program may take into account invisible paths.
     getVectorCost: function(material, file, membership){
@@ -47,11 +47,13 @@ var LC = {
         cost.time += cost.jogLengthY / MLV.laserSpeed.maxJogSpeedY;
         cost.time = cost.time / 60; //convert from seconds to minutes
         cost.money = cost.time * MLV.cost[membership];
+        cost.jogCoords = LC.vis; //pass on jog coordinates to ejs view
+        LC.vis = [[],[],[],[]];  //reset array
         return cost;
     },
 
     getRasterCost: function(file, membership, resolution){ //resolution is either 252, 512, or 1024
-        var resolution = resolution || 252;
+        var resolution = resolution || 252; //default resolution
         var ACCELERATION_TIME_PER_INCH = 0.63333; //in minutes
         var data = LC.getFilePathLength(file);
         var cost = {
@@ -60,7 +62,6 @@ var LC = {
             speed: MLV.laserSpeed.maxRasterSpeed,
             rate: MLV.cost[membership]
         };
-        console.log(cost);
         cost.time = cost.xWidth / MLV.laserSpeed.maxRasterSpeed;
         cost.time = cost.time * cost.yLength * resolution;
         cost.time = cost.time / 60; //convert from seconds to minutes
@@ -180,7 +181,7 @@ var LC = {
                 if(i != 0){
                     map.jogLengthX += LC.getLineLength([jog.x, info.startX], [jog.y, jog.y]);
                     map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, info.startY]);
-                    LC.addJogLine(jog.x, jog.y, info.startX, info.startY);
+                    LC.addJogLine(jog.x * 90, jog.y * 90, info.startX * 90, info.startY * 90);
                 }
                 else{
                     startX = info.startX;
@@ -212,13 +213,10 @@ var LC = {
         }
         map.jogLengthX += LC.getLineLength([jog.x, smallX], [jog.y, jog.y]);
         map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, smallY]);
-        LC.addJogLine(jog.x, jog.y, smallX, smallY);
+        LC.addJogLine(jog.x * 90, jog.y * 90, smallX * 90, smallY * 90);
         map.jogLengthX += LC.getLineLength([startX, smallX], [startY, startY]);
         map.jogLengthY += LC.getLineLength([startX, startX], [startY, smallY]);
-        LC.addJogLine(startX, startY, smallX, smallY);
-
-
-        
+        LC.addJogLine(startX * 90, startY * 90, smallX * 90, smallY * 90);
         map.xWidth = largeX - smallX;
         map.yLength = largeY - smallY;
         map.perimeter = map.xWidth * 2 + map.yLength * 2;
@@ -541,9 +539,10 @@ var LC = {
 
         info.length = length/PIXELS_PER_INCH * passes;
         info.jogLengthX = jogLengthX/PIXELS_PER_INCH * passes;
-        info.jogLengthX += LC.getLineLength([values.currentX, values.closeX], [values.currentY, values.currentY]) * (passes - 1) / 90;
         info.jogLengthY = jogLengthY/PIXELS_PER_INCH * passes;
-        info.jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.closeY]) * (passes - 1) / 90;
+        info.jogLengthX += LC.getLineLength([values.currentX, values.closeX], [values.currentY, values.currentY]) * (passes - 1) / PIXELS_PER_INCH;
+        info.jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.closeY]) * (passes - 1) / PIXELS_PER_INCH;
+        LC.addJogLine(values.currentX, values.currentY, values.closeX, values.closeY);
         info.smallX = values.smallX/PIXELS_PER_INCH + xOffSet;
         info.smallY = values.smallY/PIXELS_PER_INCH + yOffSet;
         info.largeX = values.largeX/PIXELS_PER_INCH + xOffSet;
@@ -629,12 +628,15 @@ var LC = {
 
     //adds jogging lines to visualization
     addJogLine: function(x1, y1, x2, y2){
-        LC.vis += "M " + x1 + " " + y1 + " L " + x2 + " " + y2 + " ";
+        LC.vis[0].push(x1);
+        LC.vis[1].push(y1);
+        LC.vis[2].push(x2);
+        LC.vis[3].push(y2);
     }
         
 }
 
-//console.log(LC.getFilePathLength("/test/test_files/1.svg", 1));
+//console.log(LC.getVectorCost('paper', '/test/test_files/1.svg', 'diyMember'));
 
 //make functions available for testing
 module.exports = LC;

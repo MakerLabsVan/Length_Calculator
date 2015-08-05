@@ -30,7 +30,8 @@ router.post("/upload", function(req, res, next){
 						jogLengthY: data.jogLengthY.toFixed(2),
 						time: data.time.toFixed(2),
 						cost: data.money.toFixed(2),
-						filename: filename
+						filename: filename,
+						jogCoords: JSON.stringify(data.jogCoords)
 					}); 
 				}
 				else if(req.body.mode === 'raster'){

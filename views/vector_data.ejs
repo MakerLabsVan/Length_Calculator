@@ -19,10 +19,17 @@
     <h3>Total cost: $<%= cost %></h3>
     <canvas id="canvas" width="600px" height="600px"></canvas> 
     <script type="text/javascript">
-      window.onload = function() {
-        canvg('canvas', '<%= filename %>');
-        var rasterLength = 0;
-        var canvas = document.getElementById('canvas');
+      canvg('canvas', '<%= filename %>');
+      var rasterLength = 0;
+      var canvas = document.getElementById('canvas');
+      var ctx = canvas.getContext("2d");
+      var jogCoords = JSON.parse("<%= jogCoords %>");
+      for (var i = 0; i < jogCoords[0].length; i++){
+        ctx.beginPath();
+        ctx.moveTo(jogCoords[0][i], jogCoords[1][i]);
+        ctx.lineTo(jogCoords[2][i], jogCoords[3][i]);
+        ctx.strokeStyle="#FF0000";
+        ctx.stroke();
       }
     </script>
   </body>

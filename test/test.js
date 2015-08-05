@@ -102,4 +102,10 @@ describe('Get the total length of all lines in svg', function() {
 		cost.jogLengthX.toFixed(2).should.be.exactly('22.94');
 		cost.jogLengthY.toFixed(2).should.be.exactly('22.41');
 	})
+	it('nested transformations', function(){
+		var cost = LC.getVectorCost('paper', '/test/test_files/1.svg', 'diyMember');
+		cost.pathLength.toFixed(2).should.be.exactly('229.39');
+		cost.jogLengthX.toFixed(2).should.be.exactly('8.95');
+		cost.jogLengthY.toFixed(2).should.be.exactly('91.56');
+	})
 })
