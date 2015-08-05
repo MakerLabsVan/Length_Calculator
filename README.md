@@ -13,11 +13,21 @@ Example
 -------
 > $ `node "project folder location"/helper_methods/length_calculator`
 >
+> $ prompt: mode: `vector`
+>
 > $ prompt: material: `paper`
 >
 > $ prompt: file: `/test/test_files/colours.svg`
 >
 > $ prompt: membership: `diyMember`
+>
+> { pathLength: 29.38620730744769,
+> jogLengthX: 11.845200392900702,
+> jogLengthY: 14.610769694597575,
+> time: 0.5825450081667319,
+> money: 0.5825450081667319,
+> jogCoords: 
+>  [ [ /a bunch of jog line coordinates/] ] }
 
 Installation
 ------------
@@ -33,7 +43,7 @@ Installation
 
 Usage
 -----
-To launch app:
+To launch command line tool:
 
 1. Open Terminal
 
@@ -47,6 +57,14 @@ To launch app:
 
 6. Input membership status
 
+To launch server for website:
+
+> $ `cd "project folder location"`
+>
+> $ `npm start`
+
+To view website, type `localhost:3000` in URL
+
 Run Tests
 ---------
 > $ `sudo npm install -g mocha`
@@ -54,16 +72,6 @@ Run Tests
 > $ `cd "project folder location"`
 >
 > $ `mocha`
-
-Test Website
-------------
-Launch Server:
-
-> $ `cd "project folder location"`
->
-> $ `npm start`
-
-To view website, type `localhost:3000` in URL
 
 Settings Config
 ---------------
@@ -87,9 +95,9 @@ Page views is in views folder
 
 To Do
 -----
-Add jog line visualization to webpage
+* Add jog line visualization to webpage
 
-Add automatic pdf conversion using poppler utils
+* Add automatic pdf conversion using poppler utils
 
 History
 -------
