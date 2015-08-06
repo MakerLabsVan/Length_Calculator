@@ -108,4 +108,8 @@ describe('Get the total length of all lines in svg', function() {
 		cost.jogLengthX.toFixed(2).should.be.exactly('8.95');
 		cost.jogLengthY.toFixed(2).should.be.exactly('91.56');
 	})
+    it('price test', function(){
+		var cost = LC.getVectorCost('balticBirch_3mm', '/test/test_files/bigCut.svg', 'fullService');
+		cost.money.toFixed(2).should.be.exactly('88.87');
+	})
 })
