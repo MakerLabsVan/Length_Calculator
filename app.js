@@ -20,7 +20,9 @@ var storage = multer.diskStorage({
     cb(null, './uploads')
   },
   filename: function (req, file, cb) {
-    location = file.originalname + '-' + Date.now()+ '.svg';
+    index = file.originalname.lastIndexOf(".");
+    fileType = file.originalname.substring(index);
+    location = file.originalname.substring(0, index) + '-' + Date.now() + fileType;
     cb(null, location)
     location = "/uploads/" + location;
   }

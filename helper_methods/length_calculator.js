@@ -29,45 +29,47 @@ prompt.get(['mode'], function(err, res){
     }
 })
 
-
 var LC = {
 
     vis: [[],[],[],[]], //jog line visualization path data.
 
     //cost calculations ignores clip paths. This means that the program may take into account invisible paths.
+
+    //Returns result object containing information
     getVectorCost: function(material, file, membership){
         var data = LC.getFilePathLength(file, MLV.materials[material].passes);
-        var cost = {
+        var result = {
             pathLength: data.total,     //calculates costs of all colours for now
             jogLengthX: data.jogLengthX,
             jogLengthY: data.jogLengthY
         };
-        cost.time = cost.pathLength / (MLV.laserSpeed.maxCutSpeed * MLV.materials[material].speed / 100);
-        cost.time += cost.jogLengthX / MLV.laserSpeed.maxJogSpeedX;
-        cost.time += cost.jogLengthY / MLV.laserSpeed.maxJogSpeedY;
-        cost.time = cost.time / 60; //convert from seconds to minutes
-        cost.money = cost.time * MLV.cost[membership];
-        cost.jogCoords = LC.vis; //pass on jog coordinates to ejs view
+        result.time = result.pathLength / (MLV.laserSpeed.maxCutSpeed * MLV.materials[material].speed / 100);
+        result.time += result.jogLengthX / MLV.laserSpeed.maxJogSpeedX;
+        result.time += result.jogLengthY / MLV.laserSpeed.maxJogSpeedY;
+        result.time = result.time / 60; //convert from seconds to minutes
+        result.money = result.time * MLV.cost[membership];
+        result.jogCoords = LC.vis; //pass on jog coordinates to ejs view
         LC.vis = [[],[],[],[]];  //reset array
-        return cost;
+        return result;
     },
 
+    //Returns result object containing information
     getRasterCost: function(file, membership, resolution){ //resolution is either 252, 512, or 1024
         var resolution = resolution || 252; //default resolution
         var ACCELERATION_TIME_PER_INCH = 0.63333; //in minutes
         var data = LC.getFilePathLength(file);
-        var cost = {
+        var result = {
             xWidth: data.xWidth,
             yLength: data.yLength,
             speed: MLV.laserSpeed.maxRasterSpeed,
             rate: MLV.cost[membership]
         };
-        cost.time = cost.xWidth / MLV.laserSpeed.maxRasterSpeed;
-        cost.time = cost.time * cost.yLength * resolution;
-        cost.time = cost.time / 60; //convert from seconds to minutes
-        cost.time += ACCELERATION_TIME_PER_INCH * cost.yLength;
-        cost.money = cost.time * MLV.cost[membership];
-        return cost;
+        result.time = result.xWidth / MLV.laserSpeed.maxRasterSpeed;
+        result.time = result.time * result.yLength * resolution;
+        result.time = result.time / 60; //convert from seconds to minutes
+        result.time += ACCELERATION_TIME_PER_INCH * result.yLength;
+        result.money = result.time * MLV.cost[membership];
+        return result;
     },
 
     //get path length of file
@@ -632,8 +634,7 @@ var LC = {
         LC.vis[1].push(y1);
         LC.vis[2].push(x2);
         LC.vis[3].push(y2);
-    }
-        
+    }  
 }
 
 //console.log(LC.getVectorCost('paper', '/test/test_files/1.svg', 'diyMember'));

@@ -3,110 +3,110 @@ var should = require('should');
 
 describe('Get the total length of all lines in svg', function() {
 	it('line', function(){
-		var map = LC.getFilePathLength("/test/test_files/line.svg");
-		map['#000000'].toFixed(2).should.be.exactly('7.30');
-		map['xWidth'].toFixed(2).should.be.exactly('4.92');
-		map['yLength'].toFixed(2).should.be.exactly('5.40');
+		var result = LC.getFilePathLength("/test/test_files/line.svg");
+		result['#000000'].toFixed(2).should.be.exactly('7.30');
+		result['xWidth'].toFixed(2).should.be.exactly('4.92');
+		result['yLength'].toFixed(2).should.be.exactly('5.40');
 	})
 	it('bezier curves', function(){
-		var map = LC.getFilePathLength("/test/test_files/bezier_curve.svg");
-		map['#000000'].toFixed(2).should.be.exactly('21.29');
-		map['xWidth'].toFixed(2).should.be.exactly('5.37');
-		map['yLength'].toFixed(2).should.be.exactly('7.22');
+		var result = LC.getFilePathLength("/test/test_files/bezier_curve.svg");
+		result['#000000'].toFixed(2).should.be.exactly('21.29');
+		result['xWidth'].toFixed(2).should.be.exactly('5.37');
+		result['yLength'].toFixed(2).should.be.exactly('7.22');
 	})
 	it('elliptical arcs', function(){
-		var map = LC.getFilePathLength("/test/test_files/elliptical_arc.svg");
-		map['#000000'].toFixed(2).should.be.exactly('10.32');
+		var result = LC.getFilePathLength("/test/test_files/elliptical_arc.svg");
+		result['#000000'].toFixed(2).should.be.exactly('10.32');
 	})
 	it('design 1', function(){
-		var map = LC.getFilePathLength("/test/test_files/design1.svg");
-		map['#000000'].toFixed(2).should.be.exactly('46.15');
-		map['xWidth'].toFixed(2).should.be.exactly('6.07');
-		map['yLength'].toFixed(2).should.be.exactly('3.30');
+		var result = LC.getFilePathLength("/test/test_files/design1.svg");
+		result['#000000'].toFixed(2).should.be.exactly('46.15');
+		result['xWidth'].toFixed(2).should.be.exactly('6.07');
+		result['yLength'].toFixed(2).should.be.exactly('3.30');
 	})
 	it('design 2', function(){
-		var map = LC.getFilePathLength("/test/test_files/design2.svg");
-		map['#000000'].toFixed(2).should.be.exactly('571.72');
+		var result = LC.getFilePathLength("/test/test_files/design2.svg");
+		result['#000000'].toFixed(2).should.be.exactly('571.72');
 	})
 	it('design 3', function(){
-		var map = LC.getFilePathLength("/test/test_files/design3.svg");
-		map['#ff0000'].toFixed(2).should.be.exactly('337.66');
+		var result = LC.getFilePathLength("/test/test_files/design3.svg");
+		result['#ff0000'].toFixed(2).should.be.exactly('337.66');
 	})
 	it('design 4, out of bounds check', function(){
-		var map = LC.getFilePathLength("/test/test_files/design4.svg");
-		should.not.exist(map['#000000']);
+		var result = LC.getFilePathLength("/test/test_files/design4.svg");
+		should.not.exist(result['#000000']);
 	})
 	it('design 5, out of bounds check', function(){
-		var map = LC.getFilePathLength("/test/test_files/design5.svg");
-		should.not.exist(map['#000000']);
+		var result = LC.getFilePathLength("/test/test_files/design5.svg");
+		should.not.exist(result['#000000']);
 	})
 	it('design 6, out of bounds check', function(){
-		var map = LC.getFilePathLength("/test/test_files/design6.svg");
-		should.not.exist(map['#000000']);
+		var result = LC.getFilePathLength("/test/test_files/design6.svg");
+		should.not.exist(result['#000000']);
 	})
 	it('design 7 with scaling', function(){
-		var map = LC.getFilePathLength("/test/test_files/design7.svg");
-		map['#ff0000'].toFixed(2).should.be.exactly('239.03');
-		map['xWidth'].toFixed(2).should.be.exactly('24.57');
-		map['yLength'].toFixed(2).should.be.exactly('15.98');
+		var result = LC.getFilePathLength("/test/test_files/design7.svg");
+		result['#ff0000'].toFixed(2).should.be.exactly('239.03');
+		result['xWidth'].toFixed(2).should.be.exactly('24.57');
+		result['yLength'].toFixed(2).should.be.exactly('15.98');
 	})
 	it('design 8 with scaling', function(){
-		var map = LC.getFilePathLength("/test/test_files/design8.svg");
-		map['#ff0000'].toFixed(2).should.be.exactly('163.98');
-		map['xWidth'].toFixed(2).should.be.exactly('13.00');
-		map['yLength'].toFixed(2).should.be.exactly('13.00');
+		var result = LC.getFilePathLength("/test/test_files/design8.svg");
+		result['#ff0000'].toFixed(2).should.be.exactly('163.98');
+		result['xWidth'].toFixed(2).should.be.exactly('13.00');
+		result['yLength'].toFixed(2).should.be.exactly('13.00');
 	})
 	it('group 1', function(){
-		var map = LC.getFilePathLength("/test/test_files/group1.svg");
-		map['#000000'].toFixed(2).should.be.exactly('24.74');
-		map['xWidth'].toFixed(2).should.be.exactly('3.50');
-		map['yLength'].toFixed(2).should.be.exactly('2.66');
+		var result = LC.getFilePathLength("/test/test_files/group1.svg");
+		result['#000000'].toFixed(2).should.be.exactly('24.74');
+		result['xWidth'].toFixed(2).should.be.exactly('3.50');
+		result['yLength'].toFixed(2).should.be.exactly('2.66');
 	})
 	it('pdf converted to svg', function(){
-		var map = LC.getFilePathLength("/test/test_files/converted_pdf.svg");
-		map['#000000'].toFixed(2).should.be.exactly('155.29');
+		var result = LC.getFilePathLength("/test/test_files/converted_pdf.svg");
+		result['#000000'].toFixed(2).should.be.exactly('155.29');
 	})
 	it('colours', function(){
-		var map = LC.getFilePathLength("/test/test_files/colours.svg");
-		map['#000000'].toFixed(2).should.be.exactly('21.29');
-		map['#ff0000'].toFixed(2).should.be.exactly('2.19');
-		map['#00ff00'].toFixed(2).should.be.exactly('5.91');
+		var result = LC.getFilePathLength("/test/test_files/colours.svg");
+		result['#000000'].toFixed(2).should.be.exactly('21.29');
+		result['#ff0000'].toFixed(2).should.be.exactly('2.19');
+		result['#00ff00'].toFixed(2).should.be.exactly('5.91');
 	})
 	it('opacity', function(){
-		var map = LC.getFilePathLength("/test/test_files/opaque.svg");
-		map['#ff0000'].toFixed(2).should.be.exactly('2.19');
-		should.not.exist(map['#000000']);
-		should.not.exist(map['#00ff00']);
+		var result = LC.getFilePathLength("/test/test_files/opaque.svg");
+		result['#ff0000'].toFixed(2).should.be.exactly('2.19');
+		should.not.exist(result['#000000']);
+		should.not.exist(result['#00ff00']);
 	})
 	it('jogging1', function(){
-		var cost = LC.getVectorCost('acryllicClear_6mm', '/test/test_files/jogging1.svg', 'diyMember');
-		cost.pathLength.toFixed(2).should.be.exactly('20.97');
-		cost.jogLengthX.toFixed(2).should.be.exactly('8.53');
-		cost.jogLengthY.toFixed(2).should.be.exactly('1.84');
+		var result = LC.getVectorCost('acryllicClear_6mm', '/test/test_files/jogging1.svg', 'diyMember');
+		result.pathLength.toFixed(2).should.be.exactly('20.97');
+		result.jogLengthX.toFixed(2).should.be.exactly('8.53');
+		result.jogLengthY.toFixed(2).should.be.exactly('1.84');
 	})
 	it('jogging2', function(){
-		var cost = LC.getVectorCost('paper', '/test/test_files/jogging1.svg', 'diyMember');
-		cost.pathLength.toFixed(2).should.be.exactly('10.49');
-		cost.jogLengthX.toFixed(2).should.be.exactly('5.79');
-		cost.jogLengthY.toFixed(2).should.be.exactly('1.20');
+		var result = LC.getVectorCost('paper', '/test/test_files/jogging1.svg', 'diyMember');
+		result.pathLength.toFixed(2).should.be.exactly('10.49');
+		result.jogLengthX.toFixed(2).should.be.exactly('5.79');
+		result.jogLengthY.toFixed(2).should.be.exactly('1.20');
 	})
 	it('jogging3', function(){
-		var cost = LC.getVectorCost('paper', '/test/test_files/bezier_curve.svg', 'diyMember');
-		cost.pathLength.toFixed(2).should.be.exactly('21.29');
-		cost.jogLengthX.toFixed(2).should.be.exactly('5.46');
-		cost.jogLengthY.toFixed(2).should.be.exactly('7.89');
+		var result = LC.getVectorCost('paper', '/test/test_files/bezier_curve.svg', 'diyMember');
+		result.pathLength.toFixed(2).should.be.exactly('21.29');
+		result.jogLengthX.toFixed(2).should.be.exactly('5.46');
+		result.jogLengthY.toFixed(2).should.be.exactly('7.89');
 	})
 	it('jogging4', function(){
-		var cost = LC.getVectorCost('acryllicClear_6mm', '/test/test_files/colours.svg', 'diyMember');
-		cost.pathLength.toFixed(2).should.be.exactly('58.77');
-		cost.jogLengthX.toFixed(2).should.be.exactly('22.94');
-		cost.jogLengthY.toFixed(2).should.be.exactly('22.41');
+		var result = LC.getVectorCost('acryllicClear_6mm', '/test/test_files/colours.svg', 'diyMember');
+		result.pathLength.toFixed(2).should.be.exactly('58.77');
+		result.jogLengthX.toFixed(2).should.be.exactly('22.94');
+		result.jogLengthY.toFixed(2).should.be.exactly('22.41');
 	})
 	it('nested transformations', function(){
-		var cost = LC.getVectorCost('paper', '/test/test_files/1.svg', 'diyMember');
-		cost.pathLength.toFixed(2).should.be.exactly('229.39');
-		cost.jogLengthX.toFixed(2).should.be.exactly('8.95');
-		cost.jogLengthY.toFixed(2).should.be.exactly('91.56');
+		var result = LC.getVectorCost('paper', '/test/test_files/1.svg', 'diyMember');
+		result.pathLength.toFixed(2).should.be.exactly('229.39');
+		result.jogLengthX.toFixed(2).should.be.exactly('8.95');
+		result.jogLengthY.toFixed(2).should.be.exactly('91.56');
 	})
     it('price test', function(){
 		var cost = LC.getVectorCost('balticBirch_3mm', '/test/test_files/bigCut.svg', 'fullService');

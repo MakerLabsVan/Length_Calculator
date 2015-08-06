@@ -65,6 +65,8 @@ To launch server for website:
 
 To view website, type `localhost:3000` in URL
 
+Website uses Express framework with ejs templates
+
 Run Tests
 ---------
 > $ `sudo npm install -g mocha`
@@ -72,6 +74,8 @@ Run Tests
 > $ `cd "project folder location"`
 >
 > $ `mocha`
+
+Test Framework uses Mocha, with Should.js assertion framework
 
 Settings Config
 ---------------
@@ -95,7 +99,7 @@ Page views is in views folder
 
 To Do
 -----
-* Add jog line visualization to webpage
+* Fix jog line visualization on webpage (Jog lines disappear when mouse over canvas)
 
 * Add automatic pdf conversion using poppler utils
 
