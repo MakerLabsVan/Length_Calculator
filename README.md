@@ -99,8 +99,6 @@ Page views is in views folder
 
 To Do
 -----
-* Fix jog line visualization on webpage (Jog lines disappear when mouse over canvas)
-
 * Add automatic pdf conversion using poppler utils
 
 History
