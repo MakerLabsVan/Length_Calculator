@@ -2,39 +2,50 @@
 <html>
 <script type="text/javascript" src="/rgbcolor.js"></script> 
 <script type="text/javascript" src="/StackBlur.js"></script>
-<script type="text/javascript" src="/canvg.js"></script> 
-  <head>
-    <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
+<script type="text/javascript" src="/canvg.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> 
+<head>
+  <title><%= title %></title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+<body>
   <% include templates/header.ejs %>
-    <h2><%= title %>:</h2>
-    <p>Material used: <%= material %></p>
-    <p>Membership: <%= membership %></p>
-    <p>Total path length: <%= pathLength %> inches</p>
-    <p>Total jog length in X axis: <%= jogLengthX %> inches</p>
-    <p>Total jog length in Y axis: <%= jogLengthY %> inches</p>
-    <h3>Total time: <%= time %> minutes</h3>
-    <h3>Total cost: $<%= cost %></h3>
-    <img>
-    <canvas id="canvas" width="600px" height="600px"></canvas> 
-    <script type="text/javascript">
-      canvg('canvas', '<%= filename %>');
-      var rasterLength = 0;
-      var canvas = document.getElementById('canvas');
-      var ctx = canvas.getContext("2d");
-      var jogCoords = JSON.parse("<%= jogCoords %>");
-      for (var i = 0; i < jogCoords[0].length; i++){
-        ctx.beginPath();
-        ctx.moveTo(jogCoords[0][i], jogCoords[1][i]);
-        ctx.lineTo(jogCoords[2][i], jogCoords[3][i]);
-        ctx.strokeStyle="#FF0000";
-        ctx.stroke();
-      }
-      var img = document.getElementsByTagName('img')[1];
-      img.src = canvas.toDataURL();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    </script>
-  </body>
+
+  <div class="container">
+    <div class="page-header">
+      <h2><%= title %></h2>
+    </div>
+    <div class="jumbotron">
+      <p>Material used: <%= material %></p>
+      <p>Membership: <%= membership %></p>
+      <p>Total path length: <%= pathLength %> inches</p>
+      <p>Total jog length in X axis: <%= jogLengthX %> inches</p>
+      <p>Total jog length in Y axis: <%= jogLengthY %> inches</p>
+      <p>Total time: <%= time %> minutes</p>
+      <p>Total cost: $<%= cost %></p>
+      <img>
+      <canvas id="canvas" width="600px" height="600px"></canvas>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    canvg('canvas', '<%= filename %>');
+    var rasterLength = 0;
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext("2d");
+    var jogCoords = JSON.parse("<%= jogCoords %>");
+    for (var i = 0; i < jogCoords[0].length; i++){
+      ctx.beginPath();
+      ctx.moveTo(jogCoords[0][i], jogCoords[1][i]);
+      ctx.lineTo(jogCoords[2][i], jogCoords[3][i]);
+      ctx.strokeStyle="#FF0000";
+      ctx.stroke();
+    }
+    var img = document.getElementsByTagName('img')[1];
+    img.src = canvas.toDataURL();
+    canvas.style.display="none";
+  </script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</body>
 </html>

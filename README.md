@@ -101,6 +101,8 @@ To Do
 -----
 * Add automatic pdf conversion using poppler utils
 
+* Raster visualization
+
 History
 -------
 * Jeremy Ho's 2015 summer internship project at MakerLabs

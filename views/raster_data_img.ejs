@@ -3,21 +3,30 @@
 <script type="text/javascript" src="/rgbcolor.js"></script> 
 <script type="text/javascript" src="/StackBlur.js"></script>
 <script type="text/javascript" src="/canvg.js"></script> 
-  <head>
-    <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> 
+<head>
+  <title><%= title %></title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+<body>
   <% include templates/header.ejs %>
-    <h2><%= title %>:</h2>
-    <p>Membership: <%= membership %></p>
-    <p id="rasterlength"></p> <!-- does NOT take into account jogging, and does not work with shapes or images-->
-    <h3 id="time"></h3>
-    <h3 id="cost"></h3>
-    <canvas id="canvas"></canvas> 
-    <script type="text/javascript">
-      var ML = {};
-      var loadFunction = function() {
+
+  <div class="container">
+    <div class="page-header">
+      <h2><%= title %></h2>
+    </div>
+    <div class="jumbotron">
+      <p>Membership: <%= membership %></p>
+      <p id="rasterlength"></p> <!-- does NOT take into account jogging, and does not work with shapes or images-->
+      <p id="time"></p>
+      <p id="cost"></p>
+      <canvas id="canvas"></canvas> 
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var ML = {};
+    var loadFunction = function() {
         var ACCELERATION_TIME_PER_INCH = 0.63333; //in minutes
         var rasterLength = 0;
         var imageFileName = "<%= filename %>";
@@ -60,23 +69,23 @@
             document.getElementById("cost").innerHTML = 'Actual cost: $15'; //15 dollar minimum fee
           }
         }, false);
-        image.src = imageFileName;
-      }   
+image.src = imageFileName;
+}   
 
-      function isColoured(x, y){
-        var offset = y * 4 * ML.width + x * 4;
-        var red = ML.data[offset];
-        var green = ML.data[offset + 1];
-        var blue = ML.data[offset + 2];
-        var alpha = ML.data[offset + 3];
-        if((red === 255 && green === 255 && blue === 255) || alpha === 0){
-          return false;
-        }
-        else{
-          return true;
-        }
-      }
-      window.onload = loadFunction;
-    </script>
-  </body>
+function isColoured(x, y){
+  var offset = y * 4 * ML.width + x * 4;
+  var red = ML.data[offset];
+  var green = ML.data[offset + 1];
+  var blue = ML.data[offset + 2];
+  var alpha = ML.data[offset + 3];
+  if((red === 255 && green === 255 && blue === 255) || alpha === 0){
+    return false;
+  }
+  else{
+    return true;
+  }
+}
+window.onload = loadFunction;
+</script>
+</body>
 </html>
