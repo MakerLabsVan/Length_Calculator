@@ -17,6 +17,7 @@
     </div>
     <div class="jumbotron">
       <p>Membership: <%= membership %></p>
+      <p id="verticalDistance"></p>
       <p id="rasterlength"></p> <!-- does NOT take into account jogging, and does not work with shapes or images-->
       <p id="time"></p>
       <p id="cost"></p>
@@ -34,6 +35,7 @@
 
         var image = new Image();
         image.addEventListener("load", function() {
+          var verticalDistance = 0;
           var canvas = document.getElementById('canvas');
           canvas.width = image.width;
           canvas.height = image.height;
@@ -42,6 +44,8 @@
           ML.width = image.width;
           ML.height = image.height;
           ML.data = ctx.getImageData(0, 0, ML.width, ML.height).data;
+          ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+          ctx.lineWidth = 1;
           for(var y = 0; y < ML.height; y++){
             var leftMostPixel = ML.width - 1;
             var rightMostPixel = 0;
@@ -53,14 +57,20 @@
             }
             if (rightMostPixel > leftMostPixel){
               rasterLength += rightMostPixel - leftMostPixel;
+              ctx.moveTo(leftMostPixel,y);
+              ctx.lineTo(rightMostPixel,y);
+              verticalDistance++;
             }
           }
-          rasterLength = rasterLength * (<%= resolution %> / 90) / 90;
+          ctx.stroke();
+
+          rasterLength = rasterLength * (<%= resolution %> / 90) / 90; //90ppi
           document.getElementById("rasterlength").innerHTML = 'Optimized raster length: ' + rasterLength.toFixed(2) + ' inches';
-          var time = (rasterLength / <%= speed %> / 60);
+          var time = (rasterLength / <%= speed %> / 60); //minutes to seconds
           console.log("speed: " + <%= speed %>);
-          time = time + ACCELERATION_TIME_PER_INCH * (image.height / 90);
+          time = time + ACCELERATION_TIME_PER_INCH * (verticalDistance / 90); //90ppi
           document.getElementById("time").innerHTML = 'Actual time: ' + time.toFixed(2) + ' minutes';
+          document.getElementById("verticalDistance").innerHTML = 'Vertical distance: ' + verticalDistance + ' pixels';
           var cost = time * <%= rate %>;
           if (cost > 15){
             document.getElementById("cost").innerHTML = 'Actual cost: $' + cost.toFixed(2);
