@@ -18,7 +18,7 @@
     <div class="jumbotron">
       <p>Membership: <%= membership %></p>
       <p id="verticalDistance"></p>
-      <p id="rasterlength"></p> <!-- does NOT take into account jogging, and does not work with shapes or images-->
+      <p id="rasterlength"></p>
       <p id="time"></p>
       <p id="cost"></p>
       <canvas id="canvas"></canvas> 
@@ -28,7 +28,7 @@
   <script type="text/javascript">
     var ML = {};
     var loadFunction = function() {
-        var ACCELERATION_TIME_PER_INCH = 0.63333; //in minutes
+        var ACCELERATION_TIME_CONSTANT = 0.00275; //Extra time taken per pass to deccelerate and accelerate motor; in minutes
         var rasterLength = 0;
         var imageFileName = "<%= filename %>";
         var fileType = imageFileName.substring(imageFileName.lastIndexOf(".") + 1);
@@ -56,19 +56,17 @@
               }
             }
             if (rightMostPixel > leftMostPixel){
-              rasterLength += rightMostPixel - leftMostPixel;
+              rasterLength += rightMostPixel - leftMostPixel + 1; //rasterLength currently in pixels
               ctx.moveTo(leftMostPixel,y);
               ctx.lineTo(rightMostPixel,y);
               verticalDistance++;
             }
           }
           ctx.stroke();
-
-          rasterLength = rasterLength * (<%= resolution %> / 90) / 90; //90ppi
+          rasterLength = (rasterLength / 90) * (<%= resolution %> / 90); //90 is for 90ppi; resolution / 90 is the resolution multiplication factor. Each pass of raster is not necessarily a pixel.
           document.getElementById("rasterlength").innerHTML = 'Optimized raster length: ' + rasterLength.toFixed(2) + ' inches';
-          var time = (rasterLength / <%= speed %> / 60); //minutes to seconds
-          console.log("speed: " + <%= speed %>);
-          time = time + ACCELERATION_TIME_PER_INCH * (verticalDistance / 90); //90ppi
+          var time = rasterLength / <%= speed %> / 60; // 60 is conversion from inches/second to inches/minute
+          time += ((verticalDistance / 90) * <%= resolution %>) * ACCELERATION_TIME_CONSTANT; //90 is for 90ppi;
           document.getElementById("time").innerHTML = 'Actual time: ' + time.toFixed(2) + ' minutes';
           document.getElementById("verticalDistance").innerHTML = 'Vertical distance: ' + verticalDistance + ' pixels';
           var cost = time * <%= rate %>;
