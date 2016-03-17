@@ -3,6 +3,7 @@
 <script type="text/javascript" src="/rgbcolor.js"></script> 
 <script type="text/javascript" src="/StackBlur.js"></script>
 <script type="text/javascript" src="/canvg.js"></script>
+<script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> 
 <head>
   <title><%= title %></title>
@@ -23,7 +24,7 @@
       <p>Total jog length in Y axis: <%= jogLengthY %> inches</p>
       <p>Total time: <%= time %> minutes</p>
       <p>Total cost: $<%= cost %></p>
-      <img>
+      <img id="visualization">
       <canvas id="canvas" width="600px" height="600px"></canvas>
     </div>
   </div>
@@ -31,7 +32,7 @@
   <script type="text/javascript">
     canvg('canvas', '<%= filename %>');
     var rasterLength = 0;
-    var canvas = document.getElementById('canvas');
+    var canvas = $("#canvas")[0];
     var ctx = canvas.getContext("2d");
     var jogCoords = JSON.parse("<%= jogCoords %>");
     for (var i = 0; i < jogCoords[0].length; i++){
@@ -41,8 +42,9 @@
       ctx.strokeStyle="#FF0000";
       ctx.stroke();
     }
-    var img = document.getElementsByTagName('img')[1];
+    var img = $("#visualization")[0];
     img.src = canvas.toDataURL();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     canvas.style.display="none";
   </script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>

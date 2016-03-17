@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<script type="text/javascript" src="./helper_methods/rgbcolor.js"></script> 
+<script type="text/javascript" src="./helper_methods/StackBlur.js"></script>
+<script type="text/javascript" src="./helper_methods/canvg.js"></script>
+<script type="text/javascript" src="./helper_methods/jquery-1.12.1.min.js"></script>
+<script type="text/javascript" src="./helper_methods/raster_calculator.js"></script>
+<head>
+	<title>Test Raster Page</title>
+	<link rel="stylesheet" href="../node_modules/mocha/mocha.css">
+</head>
+<body>
+	<div class="container">
+		<div class="page-header">
+			<h2>Test Raster Page</h2>
+		</div>
+		<div class="jumbotron">
+			<canvas id="canvas"></canvas> 
+		</div>
+	</div>
+	<script type="text/javascript">
+		window.onload = function() {
+      var imageFileName = "./test/test_files/circles3.png";
+      var resolution = 252;
+      var speed = 10.9;
+      var rate = 1;
+      var fileType = imageFileName.substring(imageFileName.lastIndexOf(".") + 1);
+      var image = new Image();
+      image.src = imageFileName;
+      image.addEventListener("load", function() {
+        var data = ML.drawCanvas(image);
+        ML.countRasterLength(data.r_length, data.v_distance, resolution, speed, rate);
+      }, false);
+    }; 
+</script>
+<div id="mocha"></div>
+<script src="../node_modules/mocha/mocha.js"></script>
+<script src="../node_modules/chai/chai.js"></script>
+<script>
+	mocha.ui('bdd'); 
+	mocha.reporter('html');
+	var expect = chai.expect;
+</script>
+<script src="./test/raster_test.js"></script>
+<script>
+	mocha.run();
+</script>
+</body>
+</html>
