@@ -35,7 +35,6 @@
         var resolution = <%= resolution %>;
         var speed = <%= speed %>;
         var rate = <%= rate %>;
-        var fileType = imageFileName.substring(imageFileName.lastIndexOf(".") + 1);
         canvg('canvas', imageFileName, { renderCallback: function () {
           var ctx = canvas.getContext('2d');
           var data = ML.drawRasterImage(canvas, ctx);
