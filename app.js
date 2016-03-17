@@ -9,6 +9,7 @@ var multer = require('multer');
 var routes = require('./routes/index');
 var about = require('./routes/about');
 var calculator = require('./routes/calculator');
+var raster_test = require('./routes/raster_test.js');
 
 var location;
 
@@ -32,7 +33,6 @@ var storage = multer.diskStorage({
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// uncomment after placing your favicon in /public
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -41,11 +41,13 @@ app.use(multer({storage: storage, fileSize: 50000000}).single('userImage'));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(path.join(__dirname, 'test')));
 app.use(express.static(path.join(__dirname, 'helper_methods')));
 
 app.use('/', routes);
 app.use('/about', about);
 app.use('/calculator', calculator);
+app.use('/raster_test', raster_test);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
