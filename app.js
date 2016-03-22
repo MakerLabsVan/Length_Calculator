@@ -6,7 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var multer = require('multer');
 
-var routes = require('./routes/index');
+// var routes = require('./routes/index');
 var about = require('./routes/about');
 var calculator = require('./routes/calculator');
 var raster_test = require('./routes/raster_test.js');
@@ -44,7 +44,7 @@ app.use(express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'test')));
 app.use(express.static(path.join(__dirname, 'helper_methods')));
 
-app.use('/', routes);
+app.use('/', calculator);
 app.use('/about', about);
 app.use('/calculator', calculator);
 app.use('/raster_test', raster_test);

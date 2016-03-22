@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var util = require("util"); 
 var length_calculator = require(__dirname + '/../helper_methods/length_calculator.js');
+var svg_data_packager = require(__dirname + '/../helper_methods/svg_data_packager.js');
 var materials_data = require(__dirname + '/../materials_data/materials_data.js')
 var fs = require('fs');
 
@@ -28,18 +29,15 @@ router.post("/upload", function(req, res, next){
 						return next(new Error("Please select an svg file for vector cutting."));
 					}
 					else{
-						var data = length_calculator.getVectorCost(req.body.material, location, req.body.membership);
+						var bundledData = SDP.parseData(location);
 						res.render('vector_data', {
 							title: 'Results',
 							material: req.body.material,
 							membership: req.body.membership,
-							pathLength: data.pathLength.toFixed(2),
-							jogLengthX: data.jogLengthX.toFixed(2),
-							jogLengthY: data.jogLengthY.toFixed(2),
-							time: data.time.toFixed(2),
-							cost: data.money.toFixed(2),
 							filename: filename,
-							jogCoords: JSON.stringify(data.jogCoords)
+							location: location,
+							packagedData: bundledData
+							// jogCoords: JSON.stringify(data.jogCoords)
 						}); 
 					}
 				}
@@ -49,35 +47,24 @@ router.post("/upload", function(req, res, next){
 						res.render('raster_data_path', {
 							title: 'Results',
 							membership: req.body.membership,
-							naiveTime: data.time.toFixed(2),
-							naiveCost: data.money.toFixed(2),
+							// naiveTime: data.time.toFixed(2),
+							// naiveCost: data.money.toFixed(2),
 							resolution: req.body.resolution,
-							speed: data.speed,
-							rate: data.rate,
-							filename: filename,
-							height: data.yLength	//FIX VARIABLES FOR SVG CONTAINING IMAGES. NEED TO FIGURE OUT HOW TO CALCULATE HEIGHT OF EMBEDED IMG IN SVG
+							speed: MLV.laserSpeed.maxRasterSpeed,
+							rate: MLV.cost[req.body.membership],
+							filename: filename
 						}); 
 					}
-					else if(fileType === "jpeg" || fileType === "JPG" || fileType === "jpg"){
+					else if(fileType === "jpeg" || fileType === "JPG" || fileType === "jpg" || fileType === "png"){
         				res.render('raster_data_img', {
 							title: 'Results',
 							membership: req.body.membership,
 							resolution: req.body.resolution,
 							filename: filename,
 							speed: MLV.laserSpeed.maxRasterSpeed,
-							rate: MLV.cost[req.body.membership],
+							rate: MLV.cost[req.body.membership]
 						}); 	
 					}
-					else if(fileType === "png"){
-        				res.render('raster_data_img', {
-							title: 'Results',
-							membership: req.body.membership,
-							resolution: req.body.resolution,
-							filename: filename,
-							speed: MLV.laserSpeed.maxRasterSpeed,
-							rate: MLV.cost[req.body.membership],
-						}); 	
-					}	
 				}
 			}
 			else { 

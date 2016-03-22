@@ -3,7 +3,14 @@
 <script type="text/javascript" src="/rgbcolor.js"></script> 
 <script type="text/javascript" src="/StackBlur.js"></script>
 <script type="text/javascript" src="/canvg.js"></script>
+<script type="text/javascript" src="/math.js"></script>
+<script type="text/javascript" src="/bezier.js"></script>
+<script type="text/javascript" src="/svg_curve_lib.js"></script>
+<script type="text/javascript" src="/../materials_data/materials_data.js"></script>
+<!-- !above import might not work due to filepath issues, double check -->
 <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/jquery.svg.css"> 
+<script type="text/javascript" src="/jquery.svg.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> 
 <head>
   <title><%= title %></title>
@@ -17,36 +24,31 @@
       <h2><%= title %></h2>
     </div>
     <div class="jumbotron">
-      <p>Material used: <%= material %></p>
-      <p>Membership: <%= membership %></p>
-      <p>Total path length: <%= pathLength %> inches</p>
-      <p>Total jog length in X axis: <%= jogLengthX %> inches</p>
-      <p>Total jog length in Y axis: <%= jogLengthY %> inches</p>
-      <p>Total time: <%= time %> minutes</p>
-      <p>Total cost: $<%= cost %></p>
-      <img id="visualization">
-      <canvas id="canvas" width="600px" height="600px"></canvas>
+      <p id="pathLength"></p>
+      <p id="jogLengthX"></p>
+      <p id="jogLengthY"></p>
+      <p id="time"></p>
+      <p id="cost"></p>
+      <svg id="svgObject" type="image/svg+xml" width="600" height="600"></svg>
     </div>
   </div>
 
   <script type="text/javascript">
-    canvg('canvas', '<%= filename %>');
-    var canvas = $("#canvas")[0];
-    var ctx = canvas.getContext("2d");
-    var jogCoords = JSON.parse("<%= jogCoords %>");
-    for (var i = 0; i < jogCoords[0].length; i++){
-      ctx.beginPath();
-      ctx.moveTo(jogCoords[0][i], jogCoords[1][i]);
-      ctx.lineTo(jogCoords[2][i], jogCoords[3][i]);
-      ctx.strokeStyle="#FF0000";
-      ctx.stroke();
+    window.onload = function (){
+    	$("#svgObject").svg({loadURL: "<%= filename %>"});
+    	var svg = $('#svgObject').svg('get');
+      //!deal with <%= packagedData %> here with vector_calculator.js function getVectorCost
     }
-    var img = $("#visualization")[0];
-    img.src = canvas.toDataURL();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    canvas.style.display="none";
+
+    var updateInfo = function(data){
+      $("#pathLength").text('Total path length: ' + data.pathLength.toFixed(2) + ' inches');
+      $("#jogLengthX").text('Total jog length in X axis: ' + data.jogLengthX.toFixed(2) + ' inches');
+      $("#jogLengthY").text('Total jog length in Y axis: ' + data.jogLengthY.toFixed(2) + ' inches');
+      $("#time").text('Total time: ' + data.time.toFixed(2) + ' minutes');
+      $("#cost").text('Cost: $' + data.money.toFixed(2));
+    }
+
   </script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 </body>
 </html>
