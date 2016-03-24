@@ -10,6 +10,7 @@ var multer = require('multer');
 var about = require('./routes/about');
 var calculator = require('./routes/calculator');
 var raster_test = require('./routes/raster_test.js');
+var vector_test = require('./routes/vector_test.js');
 
 var location;
 
@@ -49,6 +50,7 @@ app.use('/', calculator);
 app.use('/about', about);
 app.use('/calculator', calculator);
 app.use('/raster_test', raster_test);
+app.use('/vector_test', vector_test);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

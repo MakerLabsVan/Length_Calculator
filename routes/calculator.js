@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var util = require("util"); 
-var length_calculator = require(__dirname + '/../helper_methods/length_calculator.js');
 var svg_data_packager = require(__dirname + '/../helper_methods/svg_data_packager.js');
 var materials_data = require(__dirname + '/../materials_data/materials_data.js')
 var fs = require('fs');
@@ -30,6 +29,7 @@ router.post("/upload", function(req, res, next){
 					}
 					else{
 						var bundledData = svg_data_packager.parseData(location);
+						console.log(JSON.stringify(bundledData));
 						res.render('vector_data', {
 							title: 'Results',
 							material: req.body.material,
@@ -42,16 +42,13 @@ router.post("/upload", function(req, res, next){
 				}
 				else if(req.body.mode === 'raster'){
 					if(fileType === "svg"){
-						var data = length_calculator.getRasterCost(location, req.body.membership, req.body.resolution);
 						res.render('raster_data_path', {
 							title: 'Results',
 							membership: req.body.membership,
-							// naiveTime: data.time.toFixed(2),
-							// naiveCost: data.money.toFixed(2),
 							resolution: req.body.resolution,
+							filename: filename,
 							speed: MLV.laserSpeed.maxRasterSpeed,
-							rate: MLV.cost[req.body.membership],
-							filename: filename
+							rate: MLV.cost[req.body.membership]
 						}); 
 					}
 					else if(fileType === "jpeg" || fileType === "JPG" || fileType === "jpg" || fileType === "png"){

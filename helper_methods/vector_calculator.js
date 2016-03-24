@@ -412,9 +412,6 @@ var LC = {
         info.length = length/PIXELS_PER_INCH * passes;
         info.jogLengthX = jogLengthX/PIXELS_PER_INCH * passes;
         info.jogLengthY = jogLengthY/PIXELS_PER_INCH * passes;
-        info.jogLengthX += LC.getLineLength([values.currentX, values.closeX], [values.currentY, values.currentY]) * (passes - 1) / PIXELS_PER_INCH;
-        info.jogLengthY += LC.getLineLength([values.currentX, values.currentX], [values.currentY, values.closeY]) * (passes - 1) / PIXELS_PER_INCH;
-        LC.addJogLine(values.currentX, values.currentY, values.closeX, values.closeY);
         info.smallX = values.smallX/PIXELS_PER_INCH + xOffSet;
         info.smallY = values.smallY/PIXELS_PER_INCH + yOffSet;
         info.largeX = values.largeX/PIXELS_PER_INCH + xOffSet;
