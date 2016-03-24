@@ -1,11 +1,13 @@
 var fs = require('fs');
 var xpath = require('xpath');
 var dom = require('xmldom').DOMParser;
+var LC = require(__dirname + '/length_calculator.js');
+var math = require('mathjs');
 
 var SDP = {
 	parseData: function(file){
 		var data = fs.readFileSync(__dirname + '/..' + file, 'utf8');
-		var packagedData;
+		var packagedData = [];
 		while(data.indexOf('xmlns') !== -1){ //get rid of namespaces
 	            var start = data.indexOf('xmlns');
 	            var end = data.indexOf('\n', start);
@@ -23,8 +25,8 @@ var SDP = {
 	        viewBox.sx = tempString.substring(tempString.lastIndexOf(' ') + 1);
 	    }
 	    for(var i = 0; i < arrayOfStyles.length; i++){
-	    	var path = xpath.select('./@style', array[i]);
-	        var transform = xpath.select('ancestor::*/@transform', array[i]); //group transformations
+	    	var path = xpath.select('./@style', arrayOfStyles[i]);
+	        var transform = xpath.select('ancestor::*/@transform', arrayOfStyles[i]); //group transformations
 	        var transmat = math.matrix([[1,0,0],[0,1,0],[0,0,1]]);    //transformation matrix
 
 	        for (var k = 0; k < transform.length; k++){     //take into account transformations
@@ -58,7 +60,7 @@ var SDP = {
 	            }
 	        }
 
-	        var individualTransform = xpath.select('./@transform', array[i])[0]; //take into account individual path transform attributes. bugs with chaining transformations
+	        var individualTransform = xpath.select('./@transform', arrayOfStyles[i])[0]; //take into account individual path transform attributes. bugs with chaining transformations
 	        if(individualTransform !== undefined){
 	            var temp = individualTransform.nodeValue;
 	            if (temp.indexOf('matrix') !== -1){
@@ -95,9 +97,11 @@ var SDP = {
 	            style[style_array[l].substring(0,style_array[l].indexOf(":"))] = style_array[l].substring(style_array[l].indexOf(":")+1);
 	        }
 	        var colour = style.stroke;
-	        var info = {dataString: xpath.select('./@d', array[i])[0].nodeValue, transformMatrix: transmat}; //info needed for getLength function to calculate length of singular path
+	        var info = {dataString: xpath.select('./@d', arrayOfStyles[i])[0].nodeValue, transformMatrix: transmat}; //info needed for getLength function to calculate length of singular path
 	        packagedData[i] = {getLengthInfo: info, styleData: style, colourOfPath: colour};
 	    }
 	    return packagedData;
-	};
+	}
 }
+
+module.exports = SDP;

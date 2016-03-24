@@ -1,12 +1,11 @@
 //previously node modules, replaced with js libraries:
-// var bezier = require('bezier-js');        
 // var SVGCurveLib = require(__dirname + '/svg_curve_lib.js');
 // var materials_data = require(__dirname + '/../materials_data/materials_data.js');
-// var math = require('mathjs');
-
 
 //!find replacement js for this node module
 var svgparser = require('svg-path-parser');
+var math = require('mathjs');
+var bezier = require('bezier-js'); 
 
 //Its not about the length or cleanliness of the code. Its about sending a message.
 
@@ -50,7 +49,7 @@ var LC = {
             var info = LC.getLength(packagedData[i].getLengthInfo.dataString, packagedData[i].getLengthInfo.transformMatrix, passes);
             var style = packagedData[i].styleData;
             var colour = packagedData[i].colourOfPath;
-            if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0 && info.largeX <= width && info.largeY <= height){
+            if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0){
                 if(i != 0){
                     map.jogLengthX += LC.getLineLength([jog.x, info.startX], [jog.y, jog.y]);
                     map.jogLengthY += LC.getLineLength([jog.x, jog.x], [jog.y, info.startY]);
@@ -407,8 +406,8 @@ var LC = {
         }
         var info = {};
         var PIXELS_PER_INCH = 90; //dividng by 90 to convert pixels into inches
-        var xOffSet = transmat.get([0,2]) / PIXELS_PER_INCH;
-        var yOffSet = transmat.get([1,2]) / PIXELS_PER_INCH;
+        var xOffSet = transmat.data[0][2] / PIXELS_PER_INCH;
+        var yOffSet = transmat.data[1][2] / PIXELS_PER_INCH;
 
         info.length = length/PIXELS_PER_INCH * passes;
         info.jogLengthX = jogLengthX/PIXELS_PER_INCH * passes;
@@ -429,8 +428,8 @@ var LC = {
 
     //transforms coordinates with transformation matrix
     transform: function(x, y, transformation_matrix){
-        var scaleX = transformation_matrix.get([0,0]);
-        var scaleY = transformation_matrix.get([1,1]);
+        var scaleX = transformation_matrix.data[0][0];
+        var scaleY = transformation_matrix.data[1][1];
         var point = {x: x * scaleX, y: y * scaleY};
         return point;
     },

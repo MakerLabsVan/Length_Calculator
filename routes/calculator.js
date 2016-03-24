@@ -29,7 +29,7 @@ router.post("/upload", function(req, res, next){
 						return next(new Error("Please select an svg file for vector cutting."));
 					}
 					else{
-						var bundledData = SDP.parseData(location);
+						var bundledData = svg_data_packager.parseData(location);
 						res.render('vector_data', {
 							title: 'Results',
 							material: req.body.material,
@@ -37,7 +37,6 @@ router.post("/upload", function(req, res, next){
 							filename: filename,
 							location: location,
 							packagedData: bundledData
-							// jogCoords: JSON.stringify(data.jogCoords)
 						}); 
 					}
 				}

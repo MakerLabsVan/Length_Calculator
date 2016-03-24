@@ -6,7 +6,9 @@
 <script type="text/javascript" src="/math.js"></script>
 <script type="text/javascript" src="/bezier.js"></script>
 <script type="text/javascript" src="/svg_curve_lib.js"></script>
-<script type="text/javascript" src="/../materials_data/materials_data.js"></script>
+<script type="text/javascript" src="/SVGPathData.js"></script>
+<script type="text/javascript" src="/materials_data.js"></script>
+<script type="text/javascript" src="/bundle.js"></script>
 <!-- !above import might not work due to filepath issues, double check -->
 <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
 <link rel="stylesheet" type="text/css" href="/jquery.svg.css"> 
@@ -29,15 +31,31 @@
       <p id="jogLengthY"></p>
       <p id="time"></p>
       <p id="cost"></p>
-      <svg id="svgObject" type="image/svg+xml" width="600" height="600"></svg>
+      <img id="visualization">
+      <canvas id="canvas" width="600px" height="600px"></canvas>
     </div>
   </div>
 
   <script type="text/javascript">
     window.onload = function (){
-    	$("#svgObject").svg({loadURL: "<%= filename %>"});
-    	var svg = $('#svgObject').svg('get');
-      //!deal with <%= packagedData %> here with vector_calculator.js function getVectorCost
+      var bundledData = <%-JSON.stringify(packagedData)%>;
+      var result = LC.getVectorCost("<%= material %>", bundledData, "<%= membership %>");
+      updateInfo(result);
+      canvg('canvas', '<%= filename %>');
+      var canvas = $("#canvas")[0];
+      var ctx = canvas.getContext("2d");
+      var jogCoords = result.jogCoords;
+      for (var i = 0; i < jogCoords[0].length; i++){
+        ctx.beginPath();
+        ctx.moveTo(jogCoords[0][i], jogCoords[1][i]);
+        ctx.lineTo(jogCoords[2][i], jogCoords[3][i]);
+        ctx.strokeStyle="#FF0000";
+        ctx.stroke();
+      }
+      var img = $("#visualization")[0];
+      img.src = canvas.toDataURL();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.display="none";
     }
 
     var updateInfo = function(data){
