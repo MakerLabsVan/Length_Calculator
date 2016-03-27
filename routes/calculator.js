@@ -19,26 +19,26 @@ router.post("/upload", function(req, res, next){
 				var filename = '/' + req.file.filename;
 				var index = filename.lastIndexOf(".");
 				var fileType = filename.substring(index + 1);
-				console.log(fileType);
 				if(req.body.mode === 'vector'){
 					if(fileType !== "svg"){
-						return next(new Error("Please select an svg file for vector cutting."));
+						return next(new Error("Please select an svg file for vector cutting.")); //fix filetype check
 					}
 					else{
 						var bundledData = svg_data_packager.parseData(location);
-						console.log(JSON.stringify(bundledData));
-						res.render('vector_data', {
+						res.json({
 							title: 'Results',
 							material: req.body.material,
 							membership: req.body.membership,
 							filename: filename,
 							location: location,
 							packagedData: bundledData
-						}); 
+						});
+						res.end();
 					}
 				}
 				else if(req.body.mode === 'raster'){
 					if(fileType === "svg"){
+						//add filetype check
 						res.render('raster_data_path', {
 							title: 'Results',
 							membership: req.body.membership,
@@ -49,14 +49,16 @@ router.post("/upload", function(req, res, next){
 						}); 
 					}
 					else if(fileType === "jpeg" || fileType === "JPG" || fileType === "jpg" || fileType === "png"){
-        				res.render('raster_data_img', {
+						//add filetype check
+						res.json({
 							title: 'Results',
 							membership: req.body.membership,
 							resolution: req.body.resolution,
 							filename: filename,
 							speed: MLV.laserSpeed.maxRasterSpeed,
 							rate: MLV.cost[req.body.membership]
-						}); 	
+						});
+						res.end();
 					}
 				}
 			}
@@ -64,9 +66,6 @@ router.post("/upload", function(req, res, next){
 				res.end("Error. File not found."); 
 			} 
 		}); 
-	}
-	else{
-		return next(new Error("Please select a file."));
 	}
 });
 

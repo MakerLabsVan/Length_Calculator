@@ -1,7 +1,7 @@
 var ML = {};
 
 ML.drawCanvas = function(img){ //returns data object containing rasterLength & verticalDistance
-  var canvas = $("#canvas");
+  var canvas = $("#rasterCanvas");
   canvas.attr({
     width: img.width,
     height: img.height
@@ -13,9 +13,9 @@ ML.drawCanvas = function(img){ //returns data object containing rasterLength & v
 
 ML.updateInfo = function(r_length, v_distance, time, cost){
   $("#rasterLength").text('Optimized raster length: ' + r_length.toFixed(2) + ' inches');
-  $("#time").text('Actual time: ' + time.toFixed(2) + ' minutes');
+  $("#rasterTime").text('Actual time: ' + time.toFixed(2) + ' minutes');
   $("#verticalDistance").text('Vertical distance: ' + v_distance + ' pixels');
-  $("#cost").text('Cost: $' + cost);
+  $("#rasterCost").text('Cost: $' + cost);
 };
 
 ML.countRasterLength = function(r_length, v_distance, res, speed, rate){
