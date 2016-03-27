@@ -43,6 +43,7 @@
       canvg('canvas', '<%= filename %>');
       var canvas = $("#canvas")[0];
       var ctx = canvas.getContext("2d");
+      ctx.setLineDash([5, 15]);
       var jogCoords = result.jogCoords;
       for (var i = 0; i < jogCoords[0].length; i++){
         ctx.beginPath();

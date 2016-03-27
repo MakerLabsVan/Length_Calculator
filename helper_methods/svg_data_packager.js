@@ -14,7 +14,7 @@ var SDP = {
 	            data = data.substring(0, start) + data.substring(end+2);
 	    }
 	    var doc = new dom().parseFromString(data);      //parse String into data structure
-	    var arrayOfStyles = xpath.select('//path[@style]', doc);    //find all path nodes with style attribute
+	    var arrayOfPaths = xpath.select('//path[not(ancestor::clipPath)]', doc);   //select all paths that are not clip paths
 	    var width = LC.toInches(xpath.select('/svg/@width', doc)[0].nodeValue);
 	    var height = LC.toInches(xpath.select('/svg/@height', doc)[0].nodeValue);
 	    var viewBox = {data: xpath.select('/svg/@viewBox', doc)[0]};
@@ -24,9 +24,9 @@ var SDP = {
 	        var tempString = viewBox.data.substring(0, viewBox.data.lastIndexOf(' '));
 	        viewBox.sx = tempString.substring(tempString.lastIndexOf(' ') + 1);
 	    }
-	    for(var i = 0; i < arrayOfStyles.length; i++){
-	    	var path = xpath.select('./@style', arrayOfStyles[i]);
-	        var transform = xpath.select('ancestor::*/@transform', arrayOfStyles[i]); //group transformations
+	    for(var i = 0; i < arrayOfPaths.length; i++){
+	    	var path = xpath.select('./@style', arrayOfPaths[i]);
+	        var transform = xpath.select('ancestor::*/@transform', arrayOfPaths[i]); //group transformations
 	        var transmat = math.matrix([[1,0,0],[0,1,0],[0,0,1]]);    //transformation matrix
 
 	        for (var k = 0; k < transform.length; k++){     //take into account transformations
@@ -60,7 +60,7 @@ var SDP = {
 	            }
 	        }
 
-	        var individualTransform = xpath.select('./@transform', arrayOfStyles[i])[0]; //take into account individual path transform attributes. bugs with chaining transformations
+	        var individualTransform = xpath.select('./@transform', arrayOfPaths[i])[0]; //take into account individual path transform attributes. bugs with chaining transformations
 	        if(individualTransform !== undefined){
 	            var temp = individualTransform.nodeValue;
 	            if (temp.indexOf('matrix') !== -1){
@@ -90,15 +90,21 @@ var SDP = {
 	            var tempmat = math.matrix([[viewBoxScale, 0, 0], [0, viewBoxScale, 0], [0, 0, 1]])
 	            transmat = math.multiply(transmat, tempmat);
 	        }
-
-	        var style_array = path[0].nodeValue.split(';');
-	        var style = {};     //create object containing style attributes
-	        for(var l = 0; l < style_array.length; l++){
-	            style[style_array[l].substring(0,style_array[l].indexOf(":"))] = style_array[l].substring(style_array[l].indexOf(":")+1);
+	        if(path[0] !== undefined){ //if path has style attribute
+	        	var style_array = path[0].nodeValue.split(';');
+	        	var style = {};     //create object containing style attributes
+	        	for(var l = 0; l < style_array.length; l++){
+	            	style[style_array[l].substring(0,style_array[l].indexOf(":"))] = style_array[l].substring(style_array[l].indexOf(":")+1);
+	        	}
+	        	var colour = style.stroke;
+	        	var info = {dataString: xpath.select('./@d', arrayOfPaths[i])[0].nodeValue, transformMatrix: transmat}; //info needed for getLength function to calculate length of singular path
+	        	packagedData[i] = {getLengthInfo: info, styleData: style, colourOfPath: colour};
 	        }
-	        var colour = style.stroke;
-	        var info = {dataString: xpath.select('./@d', arrayOfStyles[i])[0].nodeValue, transformMatrix: transmat}; //info needed for getLength function to calculate length of singular path
-	        packagedData[i] = {getLengthInfo: info, styleData: style, colourOfPath: colour};
+
+	        else{ //if style does not have style attribute
+	        	var info = {dataString: xpath.select('./@d', arrayOfPaths[i])[0].nodeValue, transformMatrix: transmat}; //info needed for getLength function to calculate length of singular path
+	        	packagedData[i] = {getLengthInfo: info};
+	        }
 	    }
 	    return packagedData;
 	}

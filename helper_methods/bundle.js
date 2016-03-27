@@ -50,8 +50,14 @@ LC = {
         var packagedData = bundledData;
         for(var i = 0; i < packagedData.length; i++){
             var info = LC.getLength(packagedData[i].getLengthInfo.dataString, packagedData[i].getLengthInfo.transformMatrix, passes);
-            var style = packagedData[i].styleData;
-            var colour = packagedData[i].colourOfPath;
+            if(packagedData.styleData !== undefined){
+                var style = packagedData[i].styleData;
+                var colour = packagedData[i].colourOfPath;
+            }
+            else{
+                var style = "opacity:1;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1";
+                var colour = "undefined";
+            } 
             if((style.opacity === undefined || style.opacity !== '0') && info.smallX >= 0 && info.smallY >= 0){
                 if(i != 0){
                     map.jogLengthX += LC.getLineLength([jog.x, info.startX], [jog.y, jog.y]);

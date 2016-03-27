@@ -13,9 +13,6 @@ router.get('/', function(req, res, next) {
 router.post("/upload", function(req, res, next){ 
 	if (req.file) { 
 		console.log(util.inspect(req.file));
-		if (req.file.size === 0) {
-		    return next(new Error("Please select a file."));
-		}
 		fs.exists(req.file.path, function(exists) { 
 			if(exists) { 
 				var location = '/' + req.file.path;
@@ -67,6 +64,9 @@ router.post("/upload", function(req, res, next){
 				res.end("Error. File not found."); 
 			} 
 		}); 
+	}
+	else{
+		return next(new Error("Please select a file."));
 	}
 });
 
