@@ -15,7 +15,7 @@ ML.updateInfo = function(r_length, v_distance, time, cost){
   $("#rasterLength").text('Optimized raster length: ' + r_length.toFixed(2) + ' inches');
   $("#rasterTime").text('Actual time: ' + time.toFixed(2) + ' minutes');
   $("#verticalDistance").text('Vertical distance: ' + v_distance + ' pixels');
-  $("#rasterCost").text('Cost: $' + cost);
+  $("#rasterCost").text('Cost: $' + cost.toFixed(2));
 };
 
 ML.countRasterLength = function(r_length, v_distance, res, speed, rate){

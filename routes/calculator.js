@@ -21,7 +21,7 @@ router.post("/upload", function(req, res, next){
 				var fileType = filename.substring(index + 1);
 				if(req.body.mode === 'vector'){
 					if(fileType !== "svg"){
-						return next(new Error("Please select an svg file for vector cutting.")); //fix filetype check
+						return next(new Error("Please select an svg file for vector cutting."));
 					}
 					else{
 						var bundledData = svg_data_packager.parseData(location);
@@ -38,25 +38,26 @@ router.post("/upload", function(req, res, next){
 				}
 				else if(req.body.mode === 'raster'){
 					if(fileType === "svg"){
-						//add filetype check
-						res.render('raster_data_path', {
-							title: 'Results',
-							membership: req.body.membership,
-							resolution: req.body.resolution,
-							filename: filename,
-							speed: MLV.laserSpeed.maxRasterSpeed,
-							rate: MLV.cost[req.body.membership]
-						}); 
-					}
-					else if(fileType === "jpeg" || fileType === "JPG" || fileType === "jpg" || fileType === "png"){
-						//add filetype check
 						res.json({
 							title: 'Results',
 							membership: req.body.membership,
 							resolution: req.body.resolution,
 							filename: filename,
 							speed: MLV.laserSpeed.maxRasterSpeed,
-							rate: MLV.cost[req.body.membership]
+							rate: MLV.cost[req.body.membership],
+							filetype: fileType
+						});
+						res.end();
+					}
+					else if(fileType === "jpeg" || fileType === "JPG" || fileType === "jpg" || fileType === "png"){
+						res.json({
+							title: 'Results',
+							membership: req.body.membership,
+							resolution: req.body.resolution,
+							filename: filename,
+							speed: MLV.laserSpeed.maxRasterSpeed,
+							rate: MLV.cost[req.body.membership],
+							filetype: fileType
 						});
 						res.end();
 					}

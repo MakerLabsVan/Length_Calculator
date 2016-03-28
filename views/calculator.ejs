@@ -14,155 +14,187 @@
 <link rel="stylesheet" type="text/css" href="/jquery.svg.css"> 
 <script type="text/javascript" src="/jquery.svg.js"></script>
 <head>
-  <title><%= title %></title>
-  <link rel='stylesheet' href='/stylesheets/style.css' />
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> 
+	<title><%= title %></title>
+	<link rel='stylesheet' href='/stylesheets/style.css' />
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> 
 </head>
 <body>
-  <% include templates/header.ejs %>
-  <div class="container">
-    <div class="page-header">
-      <h1><%= title %></h1>
-    </div>
+	<% include templates/header.ejs %>
+	<div class="container">
+		<div class="page-header">
+			<h1><%= title %></h1>
+		</div>
 
-    <div class="jumbotron">
-      <form id="uploadForm" enctype="multipart/form-data" method="post">
+		<div class="jumbotron">
+			<form id="uploadForm" enctype="multipart/form-data" method="post">
 
-      <div class="form-group">
+				<div class="form-group">
 
-        <h3 style="font-family:verdana"> 1.Membership:</h3>
-        <select class="form-control" name="membership">
-          <option value="diyMember">DIY - MakerLabs Member</option>
-          <option value="diyPublic">DIY - Public</option>
-          <option value="fullService">Full service - regular</option>
-          <option value="fullServiceRush">Full service - rush</option>
-        </select><br>
+					<h3 style="font-family:verdana"> 1.Membership:</h3>
+					<select class="form-control" name="membership">
+						<option value="diyMember">DIY - MakerLabs Member</option>
+						<option value="diyPublic">DIY - Public</option>
+						<option value="fullService">Full service - regular</option>
+						<option value="fullServiceRush">Full service - rush</option>
+					</select><br>
 
-        <h3 style="font-family:verdana">2.Mode:</h3>
-        <select class="form-control" name="mode" id="mode">
-          <option value="vector">Vector Cutting</option>
-          <option value="raster">Engraving</option>
-        </select><br>
+					<h3 style="font-family:verdana">2.Mode:</h3>
+					<select class="form-control" name="mode" id="mode">
+						<option value="vector">Vector Cutting</option>
+						<option value="raster">Engraving</option>
+					</select><br>
 
-        <h3 style="font-family:verdana">3a.Material: (Only for Vector mode)</h3>
-        <select class="form-control" name="material">
-          <option value="paper">Paper</option>
-          <option value="balticBirch_3mm">Baltic Birch - 3mm</option>
-          <option value="acryllicClear_6mm">Clear Acryllic - 6mm</option>
-        </select><br>
+					<h3 style="font-family:verdana">3a.Material: (Only for Vector mode)</h3>
+					<select class="form-control" name="material">
+						<option value="paper">Paper</option>
+						<option value="balticBirch_3mm">Baltic Birch - 3mm</option>
+						<option value="acryllicClear_6mm">Clear Acryllic - 6mm</option>
+					</select><br>
 
-        <h3 style="font-family:verdana">3b.Resolution: (Only for Raster mode)</h3>
-        <select class="form-control" name="resolution">
-          <option value="252">250 passes per vertical inch</option> <!--actual value is 252-->
-          <option value="512">500 passes per vertical inch</option> <!--actual value is 512-->
-          <option value="1024">1000 passes per vertical inch</option> <!--actual value is 1024-->
-        </select><br>
+					<h3 style="font-family:verdana">3b.Resolution: (Only for Raster mode)</h3>
+					<select class="form-control" name="resolution">
+						<option value="252">250 passes per vertical inch</option> <!--actual value is 252-->
+						<option value="512">500 passes per vertical inch</option> <!--actual value is 512-->
+						<option value="1024">1000 passes per vertical inch</option> <!--actual value is 1024-->
+					</select><br>
 
-        <h3 style="font-family:verdana">4. Upload file: (svg, jpg, or png)</h3>
-        <input class="btn btn-default" type="file" name="userImage" id="uploadedFile"/>
-        <input class="btn btn-success" type="submit" value="Calculate Cost">
+					<h3 style="font-family:verdana">4. Upload file: (svg, jpg, or png)</h3>
+					<input class="btn btn-default" type="file" name="userImage" id="uploadedFile"/>
+					<input class="btn btn-success" type="submit" value="Calculate Cost">
 
-      </div>
+				</div>
 
-    </form>
-    <div class="container" id="vectorResults" style="display: none">
-      <h2>Results</h2>
-        <p id="pathLength"></p>
-        <p id="jogLengthX"></p>
-        <p id="jogLengthY"></p>
-        <p id="vectorTime"></p>
-        <p id="vectorCost"></p>
-        <img id="visualization">
-        <canvas id="vectorCanvas" width="600px" height="600px"></canvas>
-    </div>
-    <div class="container" id="rasterResults" style="display: none">
-      <h2>Results</h2>
-        <p id="verticalDistance"></p>
-        <p id="rasterLength"></p>
-        <p id="rasterTime"></p>
-        <p id="rasterCost"></p>
-        <canvas id="rasterCanvas"></canvas> 
-    </div>
-    <script type="text/javascript">
-      $("#uploadForm").submit(function(event){
-        var formData = new FormData(this);
-        if($("#uploadedFile").get(0).files.length == 0){
-          alert("Please upload a file");
-          event.preventDefault();
-        }
-        else{
-          var modeOptions = $("#mode").get(0);
-          var selectedMode = modeOptions.options[modeOptions.selectedIndex].text; //get the currently selected mode
-          if(selectedMode == "Vector Cutting"){
-            $.ajax({
-              type: "POST",
-              data: formData,
-              url: "/calculator/upload",
-              success: function(data){
-                $("#uploadForm").fadeOut(500);
-                $("#vectorResults").fadeIn();
-                var bundledData = data.packagedData;
-                var result = LC.getVectorCost(data.material, bundledData, data.membership);
-                updateInfo(result); //update vector info on this document, not to be confused with the updateInfo function of raster_calculator.js
-                canvg('vectorCanvas', data.filename);
-                var canvas = $("#vectorCanvas")[0];
-                var ctx = canvas.getContext("2d");
-                ctx.setLineDash([5, 15]);
-                var jogCoords = result.jogCoords;
-                for (var i = 0; i < jogCoords[0].length; i++){
-                  ctx.beginPath();
-                  ctx.moveTo(jogCoords[0][i], jogCoords[1][i]);
-                  ctx.lineTo(jogCoords[2][i], jogCoords[3][i]);
-                  ctx.strokeStyle="#FF0000";
-                  ctx.stroke();
-                }
-                var img = $("#visualization")[0];
-                img.src = canvas.toDataURL();
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                canvas.style.display="none";
-              },
-              contentType: false,
-              processData: false
-            });
-          }
-          else{
-            $.ajax({
-              type: "POST",
-              data: formData,
-              url: "/calculator/upload",
-              success: function(data){
-                $("#uploadForm").fadeOut(500);
-                $("#rasterResults").fadeIn();
-                var imageFileName = data.filename;
-                var resolution = data.resolution;
-                var speed = data.speed;
-                var rate = data.rate;
-                var image = new Image();
-                image.src = imageFileName;
-                image.addEventListener("load", function() {
-                  var data = ML.drawCanvas(image);
-                  ML.countRasterLength(data.r_length, data.v_distance, resolution, speed, rate);
-                }, false);
-              },
-              contentType: false,
-              processData: false
-            });
-          }
-        }
-      return false;
-      });
-      var updateInfo = function(data){
-        if(mode == "Vector Cutting"){
-          $("#pathLength").text('Total path length: ' + data.pathLength.toFixed(2) + ' inches');
-          $("#jogLengthX").text('Total jog length in X axis: ' + data.jogLengthX.toFixed(2) + ' inches');
-          $("#jogLengthY").text('Total jog length in Y axis: ' + data.jogLengthY.toFixed(2) + ' inches');
-          $("#vectorTime").text('Total time: ' + data.time.toFixed(2) + ' minutes');
-          $("#vectorCost").text('Cost: $' + data.money.toFixed(2));
-        }
-      }
-    </script>
-  </div>
-
-</div>
-</body>
+			</form>
+			<div class="container" id="vectorResults" style="display: none">
+				<h2>Results</h2>
+				<p id="pathLength"></p>
+				<p id="jogLengthX"></p>
+				<p id="jogLengthY"></p>
+				<p id="vectorTime"></p>
+				<p id="vectorCost"></p>
+				<img id="vectorVisualization">
+				<canvas id="vectorCanvas" width="600px" height="600px"></canvas>
+			</div>
+			<div class="container" id="rasterResults" style="display: none">
+				<h2>Results</h2>
+				<p id="verticalDistance"></p>
+				<p id="rasterLength"></p>
+				<p id="rasterTime"></p>
+				<p id="rasterCost"></p>
+				<img id="rasterVisualization">
+				<canvas id="rasterCanvas"></canvas> 
+			</div>
+			    <script type="text/javascript">
+				    var control = $("#uploadedFile");
+				    var currentFileType = "";
+				    control.change(function(event){ // When the control has changed, there are new files
+					    var currentFile = control.get(0).files;
+					    var blob = currentFile[0];
+					    currentFileType = blob.type;
+					});
+					$("#uploadForm").submit(function(event){
+				        var formData = new FormData(this);
+				        if(control.get(0).files.length == 0){
+							alert("Please upload a file");
+							event.preventDefault();
+				        }
+				        else{
+							var modeOptions = $("#mode").get(0);
+							var uploadedFile = control.get(0);
+							var selectedMode = modeOptions.options[modeOptions.selectedIndex].text; //get the currently selected mode
+							if(selectedMode == "Vector Cutting"){
+								if(currentFileType == "image/svg+xml"){
+									$.ajax({
+										type: "POST",
+										data: formData,
+										url: "/calculator/upload",
+										success: function(data){
+											$("#uploadForm").fadeOut(500);
+											$("#vectorResults").fadeIn();
+											var bundledData = data.packagedData;
+											var result = LC.getVectorCost(data.material, bundledData, data.membership);
+											updateInfo(result); //update vector info on this document, not to be confused with the updateInfo function of raster_calculator.js
+											canvg('vectorCanvas', data.filename);
+											var canvas = $("#vectorCanvas")[0];
+											var ctx = canvas.getContext("2d");
+											ctx.setLineDash([5, 15]);
+											var jogCoords = result.jogCoords;
+											for (var i = 0; i < jogCoords[0].length; i++){
+												ctx.beginPath();
+												ctx.moveTo(jogCoords[0][i], jogCoords[1][i]);
+												ctx.lineTo(jogCoords[2][i], jogCoords[3][i]);
+												ctx.strokeStyle="#FF0000";
+												ctx.stroke();
+											}
+											var img = $("#vectorVisualization")[0];
+											img.src = canvas.toDataURL();
+											ctx.clearRect(0, 0, canvas.width, canvas.height);
+											canvas.style.display="none";
+										},
+										contentType: false,
+										processData: false
+						            });
+								}
+								else{
+									alert("Please upload an SVG file for Vector Cutting");
+									event.preventDefault();
+								}
+							}
+							else{
+								if(currentFileType == "image/png" || currentFileType == "image/jpeg" || currentFileType == "image/svg+xml"){
+									$.ajax({
+										type: "POST",
+										data: formData,
+										url: "/calculator/upload",
+										success: function(data){
+											$("#uploadForm").fadeOut(500);
+											$("#rasterResults").fadeIn();
+											var imageFileName = data.filename;
+											var resolution = data.resolution;
+											var speed = data.speed;
+											var rate = data.rate;
+											if(data.filetype == "png" || data.filetype == "jpg" || data.filetype == "jpeg" || data.filetype == "JPG"){
+												var image = new Image();
+											    image.src = imageFileName;
+											    image.addEventListener("load", function() {
+													var data = ML.drawCanvas(image);
+													ML.countRasterLength(data.r_length, data.v_distance, resolution, speed, rate);
+											    }, false);
+											}
+											else if(data.filetype == "svg"){
+												canvg('rasterCanvas', imageFileName, { renderCallback: function () {
+													var canvas = $("#rasterCanvas")[0];
+													var ctx = canvas.getContext('2d');
+													var data = ML.drawRasterImage(canvas, ctx);
+													ML.countRasterLength(data.r_length, data.v_distance, resolution, speed, rate);
+													var img = $("#rasterVisualization")[0];
+													img.src = canvas.toDataURL();
+													ctx.clearRect(0, 0, canvas.width, canvas.height);
+													canvas.style.display="none";
+												}});
+											}
+										},
+										contentType: false,
+										processData: false
+									});
+								}
+								else{
+									alert("Please upload an SVG, PNG, or JPG file for Raster Engraving");
+									event.preventDefault();
+								}
+							}
+			        	}
+			        	return false;
+			        });
+					var updateInfo = function(data){
+						$("#pathLength").text('Total path length: ' + data.pathLength.toFixed(2) + ' inches');
+						$("#jogLengthX").text('Total jog length in X axis: ' + data.jogLengthX.toFixed(2) + ' inches');
+						$("#jogLengthY").text('Total jog length in Y axis: ' + data.jogLengthY.toFixed(2) + ' inches');
+						$("#vectorTime").text('Total time: ' + data.time.toFixed(2) + ' minutes');
+						$("#vectorCost").text('Cost: $' + data.money.toFixed(2));
+					}
+			    </script>
+			</div>
+		</div>
+	</body>
 </html>

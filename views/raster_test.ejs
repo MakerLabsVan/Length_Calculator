@@ -17,9 +17,10 @@
 		<div class="jumbotron">
 			<p id="verticalDistance"></p>
       <p id="rasterLength"></p>
-      <p id="time"></p>
-      <p id="cost"></p>
-      <canvas id="canvas"></canvas> 
+      <p id="rasterTime"></p>
+      <p id="rasterCost"></p>
+      <img id="rasterVisualization">
+      <canvas id="rasterCanvas"></canvas> 
 		</div>
 	</div>
 	<script type="text/javascript">
@@ -38,6 +39,25 @@
         }
       }
       img.src = imageFileName;
+    };
+    function testDrawSVG(filePath, cb){
+      var canvas = $("#rasterCanvas")[0];
+      var imageFileName = filePath;
+      var resolution = 252;
+      var speed = 10.9;
+      var rate = 1;
+      canvg('rasterCanvas', imageFileName, { renderCallback: function () {
+        var ctx = canvas.getContext('2d');
+        var data = ML.drawRasterImage(canvas, ctx);
+        ML.countRasterLength(data.r_length, data.v_distance, resolution, speed, rate);
+        var img = $("#rasterVisualization")[0];
+        img.src = canvas.toDataURL();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.display="none";
+        if (cb) {
+          cb();
+        }
+      }});
     };
 </script>
 <div id="mocha"></div>
