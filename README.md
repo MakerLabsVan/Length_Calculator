@@ -6,6 +6,7 @@ General
 The purpose of this project is to create a website that provides an estimate of the time and money required for a laser cut or raster
 
 The time estimation for laser cutting is based on the total path length of all visible vector lines in the uploaded SVG file, plus the jogging distance of the motor 
+
 The time estimation for rastering is based on the optimized distance that the laser cutter's motor would have to travel
 
 Input: membership status (modifies the cost multiplier), mode (vector cutting or engraving/rastering), material/resolution (depending on mode), and SVG/PNG/JPG file (SVG only for vector cutting mode; SVG/PNG/JPG for engraving/rastering mode)
