@@ -3,30 +3,31 @@ Vector Length Calculator
 
 General
 -------
-The purpose of this project is to create a website that provides an estimate for the time and money required for a laser cut or raster. The time estimation for laser cutting is based on the total path length of all visible vector lines in the uploaded SVG file, plus the jogging distance of the motor. The time estimation for rastering is based on the optimized distance that the laser cutter's motor would have to travel.
+The purpose of this project is to create a website that provides an estimate of the time and money required for a laser cut or raster
+
+The time estimation for laser cutting is based on the total path length of all visible vector lines in the uploaded SVG file, plus the jogging distance of the motor 
+The time estimation for rastering is based on the optimized distance that the laser cutter's motor would have to travel
 
 Input: membership status (modifies the cost multiplier), mode (vector cutting or engraving/rastering), material/resolution (depending on mode), and SVG/PNG/JPG file (SVG only for vector cutting mode; SVG/PNG/JPG for engraving/rastering mode)
 
-Output: Total path length, jog length, cost, and time for vector mode. Total raster length, vertical distance, cost, and time for raster mode.
+Output: Total path length, jog length, cost, and time for vector mode; Total raster length, vertical distance, cost, and time for raster mode
 
 Installation
 ------------
-* Download project from https://github.com/MakerLabsVan/Length_Calculator
+1. Download project from https://github.com/MakerLabsVan/Length_Calculator
 
-* Install node.js from https://nodejs.org/download/
+2. Install node.js from https://nodejs.org/download/
 
-* Install dependencies through terminal:
-
+3. Install dependencies through terminal:
 > $ `cd "project folder location"`
 >
 > $ `npm install`
 
 Usage
 -----
-To use website tool:
+To use the website tool:
 
 1. Launch server via terminal:
-
 > $ `cd "project folder location"`
 >
 > $ `npm start`
@@ -39,12 +40,12 @@ To use website tool:
 
 5. Click 'Calculate Cost' button
 
-* In the results section, the uploaded image is modified to provide the user with a visualization of what is happening. For vector cutting mode, the dotted red lines are the jog lines of the laser cutter. For engraving mode, the greyed area is the area to be rastered.
+* In the results section, the uploaded image is modified to create a visualization of what is happening. For vector cutting mode, the dotted red lines are the jog lines of the laser cutter. For engraving mode, the greyed area is the area to be rastered.
 
 * Website uses Express framework with ejs templates. Calculations are done client side, with ajax implemented to avoid page refresh.
 
 
-To use command line tool tool:
+To use the old command line tool:
 
 1. Open Terminal
 
@@ -57,6 +58,8 @@ To use command line tool tool:
 5. Input filepath _inside_ project folder (e.g. If SVG is inside "project folder location"/uploads, type in `/uploads/"SVG file name".svg`). _Do not input full filepath._
 
 6. Input membership status
+
+* Command line tool only has naive raster time estimates. Website tool is recommended instead.
 
 Example of Command Line Tool
 ----------------------------
@@ -90,7 +93,6 @@ Test via website:
 Website testing uses mocha.js framework, with chai.js assertion. Tests can be found in '/helper_methods/vector_test_unit.js' and '/helper_methods/raster_test_unit.js' respectively
 
 Test via command line:
-
 > $ `sudo npm install -g mocha`
 >
 > $ `cd "project folder location"`
