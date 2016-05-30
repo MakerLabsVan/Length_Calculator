@@ -123,8 +123,8 @@ User uploaded images go to '/uploads' folder
 To Do
 -----
 * Add automatic pdf conversion using poppler utils
-
 * Fix potential bug with vector cutting estimations with 'test/test_files/blank_world_map.svg'
+* Make awesome
 
 History
 -------
